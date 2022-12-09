@@ -1,3 +1,43 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+* {
+  font-family: "Inter";
+}
+
+body {
+  @apply bg-neutral-900 text-neutral-100;
+}
+
+h1 {
+  @apply mb-2 text-3xl font-bold;
+  font-family: "Cutive Mono";
+}
+
+h2 {
+  @apply text-2xl;
+}
+
+input,
+textarea,
+select,
+.grouped-dropdown {
+  @apply mb-2 block w-full border border-neutral-400 bg-neutral-500 px-4 py-2 placeholder-neutral-300;
+}
+
+button {
+  @apply mb-2 border border-neutral-700 bg-neutral-700 px-4 py-2 font-bold tracking-wide text-white;
+}
+
+button.secondary {
+  @apply border border-neutral-400 bg-transparent;
+}
+
+button.tertiary {
+  @apply border-none bg-transparent;
+}
+
+button:not(:last-of-type) {
+  @apply mb-0;
+}
