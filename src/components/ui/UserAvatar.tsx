@@ -4,7 +4,7 @@ import React from "react";
 
 type UserAvatarProps = {
   user: User;
-  showAvatar: boolean;
+  showAvatar?: boolean;
 };
 
 const UserAvatar = ({ user, showAvatar = false }: UserAvatarProps) => {
