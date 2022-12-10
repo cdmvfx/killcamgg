@@ -56,6 +56,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   builds        Build[]
+  reviews       Review[]
 }
 
 model VerificationToken {
@@ -77,6 +78,7 @@ model Build {
   weapon      Weapon       @relation(fields: [weaponId], references: [id])
   weaponId    Int
   attachments Attachment[]
+  reviews     Review[]
 }
 
 model Weapon {
@@ -122,4 +124,16 @@ enum AttachmentCategory {
   BOLT
   GUARD
   TRIGGER
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  buildId   String
+  build     Build    @relation(fields: [buildId], references: [id])
+  rating    Int?
+  content   String?
 }
