@@ -1,10 +1,12 @@
-import { Attachment, Weapon } from "@prisma/client";
+import type { Attachment, Weapon } from "@prisma/client";
 import { type NextPage } from "next";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import GroupedDropdown from "../components/ui/GroupedDropdown";
 import Panel from "../components/ui/Panel";
-import { WeaponsByCategory } from "../types/Weapons";
+import UserAvatar from "../components/ui/UserAvatar";
+import type { AttachmentsByCategory } from "../types/Attachments";
+import type { WeaponsByCategory } from "../types/Weapons";
 
 import { trpc } from "../utils/trpc";
 
@@ -54,9 +56,29 @@ const Builds = () => {
       {builds?.map((build, index) => {
         return (
           <div key={index} className="w-full border border-neutral-300 p-4">
-            <p className="text-xl">{build.title}</p>
-            <p>{build.description}</p>
-            <p>by {build.author.name}</p>
+            <div className="flex ">
+              <div className="basis-4/12">
+                <div>
+                  <p className="text-xl">{build.title}</p>
+                  <p>{build.description}</p>
+                </div>
+                <div>
+                  <UserAvatar user={build.author} />
+                </div>
+              </div>
+              <div>
+                <div className="mb-2">{build.weapon.name}</div>
+                <div className="flex w-full flex-row gap-2 ">
+                  {build.attachments.map((attachment, index) => {
+                    return (
+                      <div key={index} className="text-sm">
+                        <div className="h-4 w-4 bg-orange-500"></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
         );
       })}
@@ -67,25 +89,31 @@ const Builds = () => {
 const BuildForm = () => {
   const { data: session } = useSession();
   const utils = trpc.useContext();
-  const { data: weapons, isLoading: isLoadingWeapons } =
-    trpc.weapon.getAll.useQuery();
-  const { data: attachments, isLoading: isLoadingAttachments } =
-    trpc.attachment.getAll.useQuery();
+  const { data: weaponsByCategory, isLoading: isLoadingWeapons } =
+    trpc.weapon.getAllByCategory.useQuery();
+  const { data: attachmentsByCategory, isLoading: isLoadingAttachments } =
+    trpc.attachment.getAllByCategory.useQuery();
 
-  const { data: weaponsByCategory } = trpc.weapon.getAllByCategory.useQuery();
   console.log("Weapons by Category", weaponsByCategory);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [weapon, setWeapon] = useState<Weapon | Attachment>();
-  const [selectedAttachments, setSelectedAttachments] = useState<number[]>([1]);
+  const [selectedAttachments, setSelectedAttachments] = useState<Attachment[]>(
+    []
+  );
+  const [numOfAttachments, setNumOfAttachments] = useState(1);
 
   const addAttachment = () => {
-    setSelectedAttachments((current) => [...current, 1]);
+    if (numOfAttachments >= 5) return;
+    setNumOfAttachments((current) => current + 1);
+    console.log(numOfAttachments);
   };
 
   const removeAttachment = (index: number) => {
+    console.log("Removing", index, selectedAttachments[index]);
     setSelectedAttachments((current) => current.filter((_, i) => i !== index));
+    setNumOfAttachments((current) => current - 1);
   };
 
   const postBuild = trpc.build.postBuild.useMutation({
@@ -106,6 +134,7 @@ const BuildForm = () => {
         title,
         description,
         weaponId: weapon.id,
+        attachmentIds: selectedAttachments.map((attachment) => attachment.id),
       });
     }
   };
@@ -130,48 +159,88 @@ const BuildForm = () => {
         onChange={(e) => setDescription(e.target.value)}
         className=""
       />
-      <label>Select a weapon</label>
-      <GroupedDropdown
-        selectedItem={weapon}
-        setSelectedItem={setWeapon}
-        data={weaponsByCategory as WeaponsByCategory}
-      />
-      <label>Select your attachments</label>
-      <Panel>
+      {!isLoadingWeapons && (
         <div>
-          {selectedAttachments.map((attachmentId, index) => {
-            return (
-              <div key={`attachment-${attachmentId}`}>
-                <div className="mb-4 flex items-center gap-2">
-                  <select className="mb-0">
-                    {!isLoadingAttachments &&
-                      attachments?.map((attachment) => {
-                        return (
-                          <option
-                            key={`attachment-${attachment.id}`}
-                            value={attachment.id}
-                          >
-                            {attachment.name}
-                          </option>
-                        );
-                      })}
-                  </select>
-                  <div className="p-2" onClick={() => removeAttachment(index)}>
-                    &times;
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          <button className="tertiary w-full" onClick={addAttachment}>
-            Add attachment
-          </button>
+          <label>Select a weapon</label>
+          <GroupedDropdown
+            selectedItem={weapon}
+            setSelectedItem={setWeapon}
+            data={weaponsByCategory as WeaponsByCategory}
+          />
         </div>
-      </Panel>
+      )}
+      {!isLoadingAttachments && (
+        <div>
+          <label>Select your attachments</label>
+          <Panel>
+            <div>
+              {Array.from(Array(numOfAttachments).keys()).map(
+                (attachmentNum, index) => {
+                  return (
+                    <div key={`attachment-${attachmentNum}`}>
+                      <div className="mb-4 flex items-center gap-2">
+                        <AttachmentDropdown
+                          data={attachmentsByCategory as AttachmentsByCategory}
+                          index={index}
+                          selectedAttachments={selectedAttachments}
+                          setSelectedAttachments={setSelectedAttachments}
+                        />
+                        <div
+                          className="mb-2 cursor-pointer p-2 text-center text-white"
+                          onClick={() => removeAttachment(index)}
+                        >
+                          &times;
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+              )}
+              {numOfAttachments < 5 && (
+                <button className="tertiary w-full" onClick={addAttachment}>
+                  Add attachment
+                </button>
+              )}
+            </div>
+          </Panel>
+        </div>
+      )}
       <button className="w-full" onClick={submitBuild}>
         Submit Build
       </button>
     </div>
+  );
+};
+
+type AttachmentDropdownProps = {
+  data: AttachmentsByCategory;
+  selectedAttachments: Attachment[];
+  setSelectedAttachments: Dispatch<SetStateAction<Attachment[]>>;
+  index: number;
+};
+
+const AttachmentDropdown = ({
+  data,
+  selectedAttachments,
+  setSelectedAttachments,
+  index,
+}: AttachmentDropdownProps) => {
+  const changeAttachment = (selectedItem: Weapon | Attachment | undefined) => {
+    console.log("Selected: ", index, selectedItem);
+    setSelectedAttachments((current) => {
+      const newAttachments: Attachment[] = [...current];
+      newAttachments[index] = selectedItem as Attachment;
+      return newAttachments;
+    });
+  };
+
+  return (
+    <GroupedDropdown
+      data={data}
+      selectedItem={selectedAttachments[index]}
+      setSelectedItem={changeAttachment}
+      selectedAttachments={selectedAttachments}
+    />
   );
 };
 

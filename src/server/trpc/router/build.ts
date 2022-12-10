@@ -24,6 +24,7 @@ export const buildRouter = router({
 				title: z.string(),
 				description: z.string(),
 				weaponId: z.number(),
+				attachmentIds: z.array(z.number()),
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -33,7 +34,10 @@ export const buildRouter = router({
 						authorId: input.userId,
 						title: input.title,
 						description: input.description,
-						weaponId: input.weaponId
+						weaponId: input.weaponId,
+						attachments: {
+							connect: input.attachmentIds.map((id) => ({ id })),
+						}
 					}
 				})
 			} catch (error) {
