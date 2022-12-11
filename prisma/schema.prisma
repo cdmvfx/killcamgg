@@ -49,14 +49,17 @@ model Session {
 
 model User {
   id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
-  builds        Build[]
+  builds        Build[]   @relation("User Builds")
   reviews       Review[]
+  favorites     Build[]   @relation("User Favorites")
+  socials       Social[]
 }
 
 model VerificationToken {
@@ -67,18 +70,36 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model Social {
+  id       String          @id @default(cuid())
+  userId   String
+  user     User            @relation(fields: [userId], references: [id])
+  platform SocialPlatforms
+  username String
+}
+
+enum SocialPlatforms {
+  TWITCH
+  YOUTUBE
+  TWITTER
+  INSTAGRAM
+  TIKTOK
+  DISCORD
+}
+
 model Build {
   id          String       @id @default(cuid())
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   authorId    String
-  author      User         @relation(fields: [authorId], references: [id])
+  author      User         @relation("User Builds", fields: [authorId], references: [id])
   title       String
   description String?
   weapon      Weapon       @relation(fields: [weaponId], references: [id])
   weaponId    Int
   attachments Attachment[]
   reviews     Review[]
+  favorites   User[]       @relation("User Favorites")
 }
 
 model Weapon {

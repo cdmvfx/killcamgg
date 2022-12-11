@@ -1,44 +1,49 @@
-import type { Attachment, Build, User, Weapon } from "@prisma/client";
-import { useRouter } from "next/router";
+import type { Attachment, Build, Review, User, Weapon } from "@prisma/client";
+import type { GetStaticProps } from "next";
+import Link from "next/link";
+import { IoMdStar } from "react-icons/io";
+import { ReviewCard } from "../../components/features/Reviews";
 import Heading from "../../components/ui/Heading";
 import Panel from "../../components/ui/Panel";
 import UserAvatar from "../../components/ui/UserAvatar";
-import { trpc } from "../../utils/trpc";
+import { prisma } from "../../server/db/client";
+import { CompleteReviewData } from "../../types/Reviews";
 
-const BuildPage = () => {
-  const router = useRouter();
-  const { buildId } = router.query;
+type BuildData = Build & {
+  weapon: Weapon;
+  author: User;
+  attachments: Attachment[];
+  reviews: CompleteReviewData[];
+};
 
-  if (!buildId) {
-    return <div>Build not found</div>;
-  }
+type BuildPageProps = {
+  build: BuildData;
+};
 
-  const { data: build, isLoading: isLoadingBuild } = trpc.build.getOne.useQuery(
-    {
-      id: buildId as string,
-    }
-  );
+const BuildPage = (props: BuildPageProps) => {
+  const { build } = props;
+
+  console.log("Build data", build);
 
   return (
     <main>
       <div>
         <div className="">
-          {isLoadingBuild && <div>Loading...</div>}
           {build && (
             <>
               <section className="flex flex-col gap-2 bg-neutral-800 p-4">
                 <h1 className="mb-0">{build.title}</h1>
-                <div className="">
+                <Link href={`/${build.author.name}`} className="w-fit">
                   <UserAvatar user={build.author} showAvatar={true} />
-                </div>
+                </Link>
                 <div className="flex gap-8">
                   <div className="basis-1/2">
                     <label>Created</label>
-                    <div>{build.createdAt.toDateString()}</div>
+                    <div>{new Date(build.createdAt).toDateString()}</div>
                   </div>
                   <div className="basis-1/2">
                     <label>Last Updated</label>
-                    <div>{build.updatedAt.toDateString()}</div>
+                    <div>{new Date(build.updatedAt).toDateString()}</div>
                   </div>
                 </div>
               </section>
@@ -55,20 +60,16 @@ const BuildPage = () => {
   );
 };
 
-type BuildData = {
-  build: Build & {
-    weapon: Weapon;
-    author: User;
-    attachments: Attachment[];
-    reviews?: string[];
-  };
-};
-
-const BuildRatingSummary = ({ build }: BuildData) => {
+const BuildRatingSummary = ({ build }: BuildPageProps) => {
   return (
     <section className="mb-4">
       <div className="mb-4 flex items-center gap-4">
-        <div className="text-4xl">⭐5.0</div>
+        <div className="flex items-center text-4xl">
+          <span className="text-orange-500">
+            <IoMdStar />
+          </span>{" "}
+          5
+        </div>
         <div className="">
           <div>1337 Ratings</div>
         </div>
@@ -80,7 +81,7 @@ const BuildRatingSummary = ({ build }: BuildData) => {
   );
 };
 
-const BuildInfo = ({ build }: BuildData) => {
+const BuildInfo = ({ build }: BuildPageProps) => {
   return (
     <section>
       <Heading>Build Information</Heading>
@@ -97,13 +98,15 @@ const BuildInfo = ({ build }: BuildData) => {
             <div>{build.weapon.name}</div>
           </div>
           <div>
-            <label>Attachments</label>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col justify-center gap-4">
               {build.attachments.map((attachment, index) => {
                 return (
-                  <div key={index} className="flex gap-2">
-                    <div className="h-8 w-8 bg-orange-500"></div>
-                    <div>{attachment.name}</div>
+                  <div key={index} className="flex items-center gap-2">
+                    <div className="h-10 w-10 bg-orange-600"></div>
+                    <div className="flex flex-col">
+                      <label>{attachment.category}</label>
+                      <div>{attachment.name}</div>
+                    </div>
                   </div>
                 );
               })}
@@ -116,22 +119,68 @@ const BuildInfo = ({ build }: BuildData) => {
   );
 };
 
-const BuildReviews = ({ build }: BuildData) => {
+const BuildReviews = ({ build }: BuildPageProps) => {
   return (
     <section>
       <Heading>Reviews</Heading>
-      <Panel>
-        <div className="px-4">
-          {!build.reviews && (
-            <>
+      <div>
+        {!build.reviews.length ? (
+          <Panel>
+            <div className="px-4">
               <div className="mb-2 text-center">No reviews yet!</div>
               <button className="mb-0 w-full ">Review this build!</button>
-            </>
-          )}
-        </div>
-      </Panel>
+            </div>
+          </Panel>
+        ) : (
+          <div>
+            {build.reviews.map((review) => (
+              <ReviewCard
+                key={`build-review-${review.id}`}
+                build={build}
+                review={review}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 };
+
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  if (!params || !params.buildId || typeof params.buildId !== "string") {
+    return {
+      notFound: true,
+    };
+  }
+
+  const buildInfo = await prisma.build.findFirst({
+    where: { id: params.buildId },
+    include: {
+      weapon: true,
+      attachments: true,
+      author: true,
+      reviews: {
+        include: {
+          author: true,
+        },
+      },
+    },
+  });
+
+  if (!buildInfo) {
+    return {
+      notFound: true,
+    };
+  }
+
+  const buildSerialized = JSON.parse(JSON.stringify(buildInfo));
+
+  return { props: { build: buildSerialized }, revalidate: 60 };
+};
+
+export async function getStaticPaths() {
+  return { paths: [], fallback: "blocking" };
+}
 
 export default BuildPage;

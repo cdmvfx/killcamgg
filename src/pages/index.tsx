@@ -1,21 +1,12 @@
 import { type NextPage } from "next";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import BuildForm from "../components/features/BuildForm";
 import BuildsList from "../components/features/BuildList";
 import Heading from "../components/ui/Heading";
 
 const Home: NextPage = () => {
-  const { data: session, status } = useSession();
-
-  console.log(session, status);
-
-  const router = useRouter();
-
-  const viewAllBuilds = () => {
-    router.push("/builds");
-  };
+  const { data: session } = useSession();
 
   return (
     <main className="flex w-full flex-col items-center px-4 pt-10">
@@ -33,9 +24,14 @@ const Home: NextPage = () => {
               <BuildForm />
             </>
           ) : (
-            <button onClick={() => signIn("discord")} className="w-full">
-              Login with Discord
-            </button>
+            <>
+              <button onClick={() => signIn("discord")} className="w-full">
+                Login with Discord
+              </button>
+              <button onClick={() => signIn("twitch")} className="w-full">
+                Login with Twitch
+              </button>
+            </>
           )}
         </div>
         <div className="">

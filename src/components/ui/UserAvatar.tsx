@@ -1,5 +1,6 @@
 import type { User } from "@prisma/client";
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 
 type UserAvatarProps = {
@@ -10,7 +11,10 @@ type UserAvatarProps = {
 const UserAvatar = ({ user, showAvatar = false }: UserAvatarProps) => {
   return (
     <div className="inline-block">
-      <div className="flex items-center border border-neutral-500">
+      <Link
+        href={`/${user.name}`}
+        className="flex items-center border border-neutral-500"
+      >
         {showAvatar && (
           <Image
             src={user.image as string}
@@ -21,7 +25,7 @@ const UserAvatar = ({ user, showAvatar = false }: UserAvatarProps) => {
           />
         )}
         <div className="px-2">{user.name}</div>
-      </div>
+      </Link>
     </div>
   );
 };
