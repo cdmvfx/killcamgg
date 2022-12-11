@@ -60,6 +60,7 @@ type BuildData = {
     weapon: Weapon;
     author: User;
     attachments: Attachment[];
+    reviews?: string[];
   };
 };
 
