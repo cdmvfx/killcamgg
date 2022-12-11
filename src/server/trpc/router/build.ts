@@ -17,6 +17,30 @@ export const buildRouter = router({
 			console.log(error);
 		}
 	}),
+	getOne: publicProcedure
+		.input(
+			z.object({
+				id: z.string()
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			try {
+				return await ctx.prisma.build.findUnique({
+					where: {
+						id: input.id
+					},
+					include: {
+						author: true,
+						weapon: true,
+						attachments: true,
+					}
+				});
+			}
+			catch (error) {
+				console.warn('Error in build.getOne: ');
+				console.log(error);
+			}
+		}),
 	postBuild: protectedProcedure
 		.input(
 			z.object({

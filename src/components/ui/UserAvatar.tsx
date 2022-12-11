@@ -10,17 +10,17 @@ type UserAvatarProps = {
 const UserAvatar = ({ user, showAvatar = false }: UserAvatarProps) => {
   return (
     <div className="inline-block">
-      <div className="flex items-center gap-2 p-2">
+      <div className="flex items-center border border-neutral-500">
         {showAvatar && (
           <Image
             src={user.image as string}
             alt={`${user.name} profile picture`}
             width={30}
             height={30}
-            className="rounded-full"
+            className=""
           />
         )}
-        <div>{user.name}</div>
+        <div className="px-2">{user.name}</div>
       </div>
     </div>
   );

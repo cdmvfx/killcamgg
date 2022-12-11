@@ -19,15 +19,19 @@ h2 {
   @apply text-2xl;
 }
 
+label {
+  @apply inline-block text-xs font-bold uppercase tracking-wider;
+}
+
 input,
 textarea,
 select,
 .grouped-dropdown {
-  @apply mb-2 block w-full border border-neutral-400 bg-neutral-500 px-4 py-2 placeholder-neutral-300;
+  @apply mb-1 block w-full border border-neutral-400 bg-neutral-500 px-4 py-2 placeholder-neutral-300;
 }
 
 button {
-  @apply mb-2 border border-neutral-700 bg-neutral-700 px-4 py-2 font-bold tracking-wide text-white;
+  @apply mb-2 border border-orange-700 bg-orange-700 px-4 py-2 font-bold tracking-wide text-white;
 }
 
 button.secondary {
