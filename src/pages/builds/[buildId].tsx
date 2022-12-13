@@ -1,5 +1,6 @@
 import type { Attachment, Build, User, Weapon } from "@prisma/client";
 import type { GetServerSideProps } from "next";
+import Link from "next/link";
 import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
 import { ReviewCard } from "../../components/features/Reviews";
 import Heading from "../../components/ui/Heading";
@@ -81,9 +82,11 @@ const BuildPage = (props: BuildPageProps) => {
                 <BuildRatingSummary
                   isFavorited={isFavorited}
                   changeFavorite={changeFavorite}
+                  user={user}
+                  build={build}
                 />
                 <BuildInfo build={build} />
-                <BuildReviews build={build} />
+                <BuildReviews build={build} user={user} />
               </div>
             </>
           )}
@@ -96,9 +99,13 @@ const BuildPage = (props: BuildPageProps) => {
 const BuildRatingSummary = ({
   isFavorited,
   changeFavorite,
+  user,
+  build,
 }: {
   isFavorited: boolean;
   changeFavorite: () => void;
+  user: User | null;
+  build: BuildData;
 }) => {
   return (
     <section className="mb-4">
@@ -114,15 +121,29 @@ const BuildRatingSummary = ({
             <div>1337 Ratings</div>
           </div>
         </div>
-        <div
-          className="cursor-pointer text-4xl text-red-500"
-          onClick={changeFavorite}
-        >
-          {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
-        </div>
+        {user && build.authorId === user.id ? (
+          ""
+        ) : (
+          <div
+            className="cursor-pointer text-4xl text-red-500"
+            onClick={changeFavorite}
+          >
+            {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
+          </div>
+        )}
       </div>
       <div className="">
-        <button className="mb-0 w-full ">Review this build!</button>
+        {user && build.authorId !== user.id && (
+          <button className="mb-0 w-full ">Review this build!</button>
+        )}
+        {user && build.authorId === user.id && (
+          <button className="mb-0 w-full ">Edit Build</button>
+        )}
+        {user === null && (
+          <button className="w-full">
+            <Link href={`/`}>Sign in to review this build!</Link>
+          </button>
+        )}
       </div>
     </section>
   );
@@ -166,7 +187,13 @@ const BuildInfo = ({ build }: { build: BuildData }) => {
   );
 };
 
-const BuildReviews = ({ build }: { build: BuildData }) => {
+const BuildReviews = ({
+  build,
+  user,
+}: {
+  build: BuildData;
+  user: User | null;
+}) => {
   return (
     <section>
       <Heading>Reviews</Heading>
@@ -175,7 +202,14 @@ const BuildReviews = ({ build }: { build: BuildData }) => {
           <Panel>
             <div className="px-4">
               <div className="mb-2 text-center">No reviews yet!</div>
-              <button className="mb-0 w-full ">Review this build!</button>
+              {user === null && (
+                <button className="w-full">
+                  <Link href={`/`}>Sign in to review this build!</Link>
+                </button>
+              )}
+              {user && build.authorId !== user.id && (
+                <button className="w-full">Review this build!</button>
+              )}
             </div>
           </Panel>
         ) : (
@@ -227,6 +261,8 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
 
   const session = await getServerAuthSession(ctx);
 
+  console.log("session", session);
+
   const user = await prisma.user.findFirst({
     where: {
       id: session?.user?.id,
@@ -240,7 +276,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const userSerialized = JSON.parse(JSON.stringify(user));
 
   return {
-    props: { build: buildSerialized, user: userSerialized },
+    props: { build: buildSerialized, user: session ? userSerialized : null },
   };
 };
 
