@@ -1,13 +1,14 @@
-import type { Attachment, Build, Review, User, Weapon } from "@prisma/client";
-import type { GetStaticProps } from "next";
-import Link from "next/link";
-import { IoMdStar } from "react-icons/io";
+import type { Attachment, Build, User, Weapon } from "@prisma/client";
+import type { GetServerSideProps } from "next";
+import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
 import { ReviewCard } from "../../components/features/Reviews";
 import Heading from "../../components/ui/Heading";
 import Panel from "../../components/ui/Panel";
 import UserAvatar from "../../components/ui/UserAvatar";
+import { getServerAuthSession } from "../../server/common/get-server-auth-session";
 import { prisma } from "../../server/db/client";
-import { CompleteReviewData } from "../../types/Reviews";
+import type { CompleteReviewData } from "../../types/Reviews";
+import { trpc } from "../../utils/trpc";
 
 type BuildData = Build & {
   weapon: Weapon;
@@ -18,12 +19,41 @@ type BuildData = Build & {
 
 type BuildPageProps = {
   build: BuildData;
+  user:
+    | (User & {
+        favorites: BuildData[];
+      })
+    | null;
 };
 
 const BuildPage = (props: BuildPageProps) => {
-  const { build } = props;
+  const { build, user } = props;
+
+  const { mutate: toggleFavoriteMutation } =
+    trpc.user.toggleFavorite.useMutation();
+
+  const isFavorited = user
+    ? user?.favorites.some((favorite) => favorite.id === build.id)
+    : false;
+
+  const changeFavorite = async () => {
+    if (!user) return;
+
+    if (isFavorited) {
+      user.favorites = user.favorites.filter(
+        (favorite) => favorite.id !== build.id
+      );
+    } else {
+      user.favorites.push(build);
+    }
+
+    await toggleFavoriteMutation({
+      buildId: build.id,
+    });
+  };
 
   console.log("Build data", build);
+  console.log("User data", user);
 
   return (
     <main>
@@ -33,9 +63,9 @@ const BuildPage = (props: BuildPageProps) => {
             <>
               <section className="flex flex-col gap-2 bg-neutral-800 p-4">
                 <h1 className="mb-0">{build.title}</h1>
-                <Link href={`/${build.author.name}`} className="w-fit">
+                <div className="w-fit">
                   <UserAvatar user={build.author} showAvatar={true} />
-                </Link>
+                </div>
                 <div className="flex gap-8">
                   <div className="basis-1/2">
                     <label>Created</label>
@@ -48,7 +78,10 @@ const BuildPage = (props: BuildPageProps) => {
                 </div>
               </section>
               <div className="p-4">
-                <BuildRatingSummary build={build} />
+                <BuildRatingSummary
+                  isFavorited={isFavorited}
+                  changeFavorite={changeFavorite}
+                />
                 <BuildInfo build={build} />
                 <BuildReviews build={build} />
               </div>
@@ -60,18 +93,32 @@ const BuildPage = (props: BuildPageProps) => {
   );
 };
 
-const BuildRatingSummary = ({ build }: BuildPageProps) => {
+const BuildRatingSummary = ({
+  isFavorited,
+  changeFavorite,
+}: {
+  isFavorited: boolean;
+  changeFavorite: () => void;
+}) => {
   return (
     <section className="mb-4">
-      <div className="mb-4 flex items-center gap-4">
-        <div className="flex items-center text-4xl">
-          <span className="text-orange-500">
-            <IoMdStar />
-          </span>{" "}
-          5
+      <div className="mb-4 flex items-center justify-between ">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center text-4xl">
+            <span className="text-orange-500">
+              <IoMdStar />
+            </span>{" "}
+            5
+          </div>
+          <div className="">
+            <div>1337 Ratings</div>
+          </div>
         </div>
-        <div className="">
-          <div>1337 Ratings</div>
+        <div
+          className="cursor-pointer text-4xl text-red-500"
+          onClick={changeFavorite}
+        >
+          {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
         </div>
       </div>
       <div className="">
@@ -81,7 +128,7 @@ const BuildRatingSummary = ({ build }: BuildPageProps) => {
   );
 };
 
-const BuildInfo = ({ build }: BuildPageProps) => {
+const BuildInfo = ({ build }: { build: BuildData }) => {
   return (
     <section>
       <Heading>Build Information</Heading>
@@ -119,7 +166,7 @@ const BuildInfo = ({ build }: BuildPageProps) => {
   );
 };
 
-const BuildReviews = ({ build }: BuildPageProps) => {
+const BuildReviews = ({ build }: { build: BuildData }) => {
   return (
     <section>
       <Heading>Reviews</Heading>
@@ -147,15 +194,19 @@ const BuildReviews = ({ build }: BuildPageProps) => {
   );
 };
 
-export const getStaticProps: GetStaticProps = async ({ params }) => {
-  if (!params || !params.buildId || typeof params.buildId !== "string") {
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  if (
+    !ctx.params ||
+    !ctx.params.buildId ||
+    typeof ctx.params.buildId !== "string"
+  ) {
     return {
       notFound: true,
     };
   }
 
   const buildInfo = await prisma.build.findFirst({
-    where: { id: params.buildId },
+    where: { id: ctx.params.buildId },
     include: {
       weapon: true,
       attachments: true,
@@ -174,13 +225,23 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     };
   }
 
+  const session = await getServerAuthSession(ctx);
+
+  const user = await prisma.user.findFirst({
+    where: {
+      id: session?.user?.id,
+    },
+    include: {
+      favorites: true,
+    },
+  });
+
   const buildSerialized = JSON.parse(JSON.stringify(buildInfo));
+  const userSerialized = JSON.parse(JSON.stringify(user));
 
-  return { props: { build: buildSerialized }, revalidate: 60 };
+  return {
+    props: { build: buildSerialized, user: userSerialized },
+  };
 };
-
-export async function getStaticPaths() {
-  return { paths: [], fallback: "blocking" };
-}
 
 export default BuildPage;

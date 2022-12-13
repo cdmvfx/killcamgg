@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import type { CompleteBuildData } from "../types/Builds";
 import { BuildCard } from "../components/features/BuildList";
 import { ReviewCard } from "../components/features/Reviews";
-import { CompleteReviewData } from "../types/Reviews";
+import type { CompleteReviewData } from "../types/Reviews";
 
 type Props = {
   user: User & {
