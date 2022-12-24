@@ -1,30 +1,40 @@
-import type { Review, User } from "@prisma/client";
 import type { GetStaticProps } from "next";
 import { prisma } from "../server/db/client";
 import Image from "next/image";
 import Heading from "../components/ui/Heading";
 import { useSession } from "next-auth/react";
-import type { CompleteBuildData } from "../types/Builds";
 import { BuildCard } from "../components/features/BuildList";
 import { ReviewCard } from "../components/features/Reviews";
-import type { CompleteReviewData } from "../types/Reviews";
+import { trpc } from "../utils/trpc";
 
 type Props = {
-  user: User & {
-    createdAt: string;
-    favorites: CompleteBuildData[];
-    builds: CompleteBuildData[];
-    reviews: Review[];
-  };
+  user: ProfileDataSerialized;
 };
 
 const ProfilePage = (props: Props) => {
-  const { user } = props;
+  const { user: userData } = props;
 
   const { data: session } = useSession();
 
-  console.log("Session data", session);
+  const { data: user } = trpc.user.getProfileData.useQuery(
+    {
+      name: userData.name as string,
+    },
+    {
+      initialData: userData,
+      enabled: false,
+      onSuccess: () => {
+        console.log("Fetched profile data.");
+      },
+    }
+  );
+
+  if (!user) return <div>Loading user...</div>;
+
+  const isCurrentUser = session && user.id === session.user?.id;
+
   console.log("User data", user);
+  console.log("specific", user.createdAt);
 
   return (
     <main>
@@ -64,9 +74,7 @@ const ProfilePage = (props: Props) => {
       </section>
       <section className="p-4">
         <Heading>
-          {session && user.id === session.user?.id
-            ? "Your Builds"
-            : `${user.name}'s Builds`}
+          {isCurrentUser ? "Your Builds" : `${user.name}'s Builds`}
         </Heading>
         <div className="flex flex-col gap-4">
           {user.builds.map((build, index) => (
@@ -76,9 +84,7 @@ const ProfilePage = (props: Props) => {
       </section>
       <section className="p-4">
         <Heading>
-          {session && user.id === session.user?.id
-            ? "Your Favorites"
-            : `${user.name}'s Favorites`}
+          {isCurrentUser ? "Your Favorites" : `${user.name}'s Favorites`}
         </Heading>
         <div className="flex flex-col gap-4">
           {user.favorites.map((build, index) => (
@@ -88,16 +94,11 @@ const ProfilePage = (props: Props) => {
       </section>
       <section className="p-4">
         <Heading>
-          {session && user.id === session.user?.id
-            ? "Your Reviews"
-            : `${user.name}'s Reviews`}
+          {isCurrentUser ? "Your Reviews" : `${user.name}'s Reviews`}
         </Heading>
         <div className="flex flex-col gap-4">
           {user.reviews.map((review, index) => (
-            <ReviewCard
-              key={`favorite-${index}`}
-              review={review as CompleteReviewData}
-            />
+            <ReviewCard key={`favorite-${index}`} review={review} />
           ))}
         </div>
       </section>
@@ -116,7 +117,7 @@ export const getStaticProps: GetStaticProps = async (ctx) => {
 
   const username = params.username.toLowerCase();
 
-  const userInfo = await prisma.user.findFirst({
+  const profileData = await prisma.user.findFirst({
     where: { name: { equals: username, mode: "insensitive" } },
     select: {
       name: true,
@@ -142,7 +143,12 @@ export const getStaticProps: GetStaticProps = async (ctx) => {
       },
       favorites: {
         include: {
-          author: true,
+          author: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
           weapon: true,
           attachments: true,
         },
@@ -150,15 +156,17 @@ export const getStaticProps: GetStaticProps = async (ctx) => {
     },
   });
 
-  if (!userInfo) {
+  if (!profileData) {
     return {
       notFound: true,
     };
   }
 
-  const userSerialized = JSON.parse(JSON.stringify(userInfo));
+  const userSerialized: ProfileDataSerialized = JSON.parse(
+    JSON.stringify(profileData)
+  );
 
-  return { props: { user: userSerialized }, revalidate: 60 };
+  return { props: { user: profileData }, revalidate: 60 };
 };
 
 export async function getStaticPaths() {

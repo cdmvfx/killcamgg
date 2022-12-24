@@ -26,14 +26,29 @@ export const buildRouter = router({
 		.query(async ({ ctx, input }) => {
 			try {
 				return await ctx.prisma.build.findUnique({
-					where: {
-						id: input.id
-					},
+					where: { id: input.id },
 					include: {
-						author: true,
 						weapon: true,
 						attachments: true,
-					}
+						author: {
+							select: {
+								id: true,
+								name: true,
+								image: true,
+							},
+						},
+						reviews: {
+							include: {
+								author: {
+									select: {
+										id: true,
+										name: true,
+										image: true,
+									},
+								},
+							},
+						},
+					},
 				});
 			}
 			catch (error) {
@@ -68,4 +83,5 @@ export const buildRouter = router({
 				console.log(error);
 			}
 		}),
+
 });

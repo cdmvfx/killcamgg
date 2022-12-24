@@ -2,25 +2,75 @@ import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 
 export const userRouter = router({
-	getOne: publicProcedure
+	getProfileData: publicProcedure
 		.input(
 			z.object({
-				id: z.string()
+				name: z.string()
 			})
 		)
 		.query(async ({ ctx, input }) => {
 			try {
-				return await ctx.prisma.user.findUnique({
-					where: {
-						id: input.id
-					},
+				return await ctx.prisma.user.findFirst({
+					where: { name: { equals: input.name, mode: "insensitive" } },
 					select: {
-						id: true,
 						name: true,
-						builds: true,
-						reviews: true,
-						favorites: true
-					}
+						image: true,
+						createdAt: true,
+						id: true,
+						builds: {
+							include: {
+								author: {
+									select: {
+										name: true,
+										image: true,
+									},
+								},
+								weapon: true,
+								attachments: true,
+							},
+						},
+						reviews: {
+							include: {
+								build: true,
+							},
+						},
+						favorites: {
+							include: {
+								author: {
+									select: {
+										name: true,
+										image: true,
+									},
+								},
+								weapon: true,
+								attachments: true,
+							},
+						},
+					},
+				});
+			}
+			catch (error) {
+				console.warn('Error in build.getProfileData: ');
+				console.log(error);
+			}
+		}),
+	getOne: publicProcedure
+		.input(
+			z.object({
+				id: z.string().nullable()
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			try {
+				if (!input.id) return null;
+
+				return await ctx.prisma.user.findFirst({
+					where: {
+						id: input.id,
+					},
+					include: {
+						favorites: true,
+					},
 				});
 			}
 			catch (error) {

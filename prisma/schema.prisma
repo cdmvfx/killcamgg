@@ -50,7 +50,7 @@ model Session {
 model User {
   id            String    @id @default(cuid())
   createdAt     DateTime  @default(now())
-  name          String?
+  name          String?   @unique
   email         String?   @unique
   emailVerified DateTime?
   image         String?
@@ -151,10 +151,10 @@ model Review {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  authorId  String
+  authorId  String   @unique
   author    User     @relation(fields: [authorId], references: [id])
   buildId   String
   build     Build    @relation(fields: [buildId], references: [id])
-  rating    Int?
+  rating    Int
   content   String?
 }

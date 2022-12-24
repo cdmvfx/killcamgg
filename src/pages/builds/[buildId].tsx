@@ -1,60 +1,110 @@
-import type { Attachment, Build, User, Weapon } from "@prisma/client";
-import type { GetServerSideProps } from "next";
 import Link from "next/link";
-import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
-import { ReviewCard } from "../../components/features/Reviews";
 import Heading from "../../components/ui/Heading";
 import Panel from "../../components/ui/Panel";
 import UserAvatar from "../../components/ui/UserAvatar";
+import {
+  ReviewCard,
+  ReviewForm,
+  ReviewList,
+} from "../../components/features/Reviews";
+import {
+  IoMdHeart,
+  IoMdHeartEmpty,
+  IoMdStar,
+  IoMdStarOutline,
+} from "react-icons/io";
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
 import { prisma } from "../../server/db/client";
-import type { CompleteReviewData } from "../../types/Reviews";
 import { trpc } from "../../utils/trpc";
+import { useState } from "react";
+import { z } from "zod";
+import Alert from "../../components/ui/Alert";
 
-type BuildData = Build & {
-  weapon: Weapon;
-  author: User;
-  attachments: Attachment[];
-  reviews: CompleteReviewData[];
-};
+import type {
+  GetServerSidePropsContext,
+  InferGetServerSidePropsType,
+  NextPage,
+} from "next";
 
-type BuildPageProps = {
-  build: BuildData;
-  user:
-    | (User & {
-        favorites: BuildData[];
-      })
-    | null;
-};
+type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
-const BuildPage = (props: BuildPageProps) => {
-  const { build, user } = props;
+const BuildPage: NextPage<PageProps> = (props) => {
+  const { build: initialBuildData, user: initialUserData } = props;
+
+  const utils = trpc.useContext();
+
+  const { data: build, refetch: refetchBuildData } = trpc.build.getOne.useQuery(
+    { id: initialBuildData.id },
+    {
+      initialData: initialBuildData,
+    }
+  );
+
+  if (!build) return <div>Build Not Found!</div>;
+
+  const { data: user, refetch: refetchUserData } = trpc.user.getOne.useQuery(
+    { id: initialUserData ? initialUserData.id : null },
+    {
+      enabled: false,
+      initialData: initialUserData,
+    }
+  );
 
   const { mutate: toggleFavoriteMutation } =
-    trpc.user.toggleFavorite.useMutation();
+    trpc.user.toggleFavorite.useMutation({
+      onMutate: async (input) => {
+        if (!user) return;
+        await utils.user.getOne.cancel();
+        const previousUser = utils.user.getOne.getData({ id: user.id });
+        utils.user.getOne.setData({ id: user.id }, (oldUser) => {
+          if (!oldUser) return null;
 
-  const isFavorited = user
-    ? user?.favorites.some((favorite) => favorite.id === build.id)
-    : false;
+          if (
+            oldUser.favorites.some((favorite) => favorite.id === input.buildId)
+          ) {
+            return {
+              ...oldUser,
+              favorites: oldUser.favorites.filter(
+                (favorite) => favorite.id !== input.buildId
+              ),
+            };
+          } else {
+            return {
+              ...oldUser,
+              favorites: [...oldUser.favorites, build],
+            };
+          }
+        });
+        return { previousUser };
+      },
+      onSettled: async () => {
+        if (!user) return;
+        console.log("invalidating user");
+        refetchUserData();
+      },
+      onError: async (err, input, context) => {
+        console.log("Error favoriting build.", err);
+        utils.user.getOne.setData(
+          { id: user?.id as string },
+          context?.previousUser
+        );
+      },
+    });
 
   const changeFavorite = async () => {
-    if (!user) return;
-
-    if (isFavorited) {
-      user.favorites = user.favorites.filter(
-        (favorite) => favorite.id !== build.id
-      );
-    } else {
-      user.favorites.push(build);
-    }
-
-    await toggleFavoriteMutation({
+    toggleFavoriteMutation({
       buildId: build.id,
     });
   };
 
-  console.log("Build data", build);
-  console.log("User data", user);
+  const isFavorited = user
+    ? user.favorites.some((favorite) => favorite.id === build.id)
+    : false;
+
+  if (user === undefined) return <div>Loading user...</div>;
+
+  console.log("Build", build);
+  console.log("User", user);
 
   return (
     <main>
@@ -101,11 +151,9 @@ const BuildRatingSummary = ({
   changeFavorite,
   user,
   build,
-}: {
+}: PageProps & {
   isFavorited: boolean;
   changeFavorite: () => void;
-  user: User | null;
-  build: BuildData;
 }) => {
   return (
     <section className="mb-4">
@@ -149,7 +197,7 @@ const BuildRatingSummary = ({
   );
 };
 
-const BuildInfo = ({ build }: { build: BuildData }) => {
+const BuildInfo = ({ build }: Omit<PageProps, "user">) => {
   return (
     <section>
       <Heading>Build Information</Heading>
@@ -187,48 +235,54 @@ const BuildInfo = ({ build }: { build: BuildData }) => {
   );
 };
 
-const BuildReviews = ({
-  build,
-  user,
-}: {
-  build: BuildData;
-  user: User | null;
-}) => {
+const BuildReviews = ({ build, user }: PageProps) => {
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
   return (
     <section>
       <Heading>Reviews</Heading>
-      <div>
+      <div className="flex flex-col gap-4">
         {!build.reviews.length ? (
           <Panel>
             <div className="px-4">
               <div className="mb-2 text-center">No reviews yet!</div>
-              {user === null && (
-                <button className="w-full">
-                  <Link href={`/`}>Sign in to review this build!</Link>
-                </button>
-              )}
-              {user && build.authorId !== user.id && (
-                <button className="w-full">Review this build!</button>
-              )}
             </div>
           </Panel>
         ) : (
-          <div>
-            {build.reviews.map((review) => (
-              <ReviewCard
-                key={`build-review-${review.id}`}
-                build={build}
-                review={review}
-              />
-            ))}
-          </div>
+          <Panel>
+            <div className="px-4">
+              <ReviewList build={build} reviews={build.reviews} />
+            </div>
+          </Panel>
         )}
+        <Panel>
+          <div className="px-4">
+            {user === null && (
+              <button className="w-full">
+                <Link href={`/`}>Sign in to review this build!</Link>
+              </button>
+            )}
+            {user && build.authorId !== user.id && !showReviewForm && (
+              <>
+                <button
+                  className="w-full"
+                  onClick={() => setShowReviewForm((state) => !state)}
+                >
+                  Review this build!
+                </button>
+              </>
+            )}
+            {user && build.authorId !== user.id && showReviewForm && (
+              <ReviewForm build={build} setShowReviewForm={setShowReviewForm} />
+            )}
+          </div>
+        </Panel>
       </div>
     </section>
   );
 };
 
-export const getServerSideProps: GetServerSideProps = async (ctx) => {
+export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   if (
     !ctx.params ||
     !ctx.params.buildId ||
@@ -239,21 +293,33 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     };
   }
 
-  const buildInfo = await prisma.build.findFirst({
+  const build = await prisma.build.findFirst({
     where: { id: ctx.params.buildId },
     include: {
       weapon: true,
       attachments: true,
-      author: true,
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
       reviews: {
         include: {
-          author: true,
+          author: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
         },
       },
     },
   });
 
-  if (!buildInfo) {
+  if (!build) {
     return {
       notFound: true,
     };
@@ -261,22 +327,19 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
 
   const session = await getServerAuthSession(ctx);
 
-  console.log("session", session);
-
-  const user = await prisma.user.findFirst({
-    where: {
-      id: session?.user?.id,
-    },
-    include: {
-      favorites: true,
-    },
-  });
-
-  const buildSerialized = JSON.parse(JSON.stringify(buildInfo));
-  const userSerialized = JSON.parse(JSON.stringify(user));
+  const user = session
+    ? await prisma.user.findFirst({
+        where: {
+          id: session.user?.id,
+        },
+        include: {
+          favorites: true,
+        },
+      })
+    : null;
 
   return {
-    props: { build: buildSerialized, user: session ? userSerialized : null },
+    props: { build, user },
   };
 };
 

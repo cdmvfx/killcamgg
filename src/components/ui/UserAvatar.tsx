@@ -1,10 +1,9 @@
-import type { User } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import type { UserSerialized } from "../../types/Users";
 
 type UserAvatarProps = {
-  user: User;
+  user: Pick<UserSerialized, "id" | "name" | "image">;
   showAvatar?: boolean;
 };
 

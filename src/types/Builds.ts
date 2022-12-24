@@ -1,9 +1,10 @@
-import type { Attachment, Build, User, Weapon } from "@prisma/client";
+import type { AppRouter } from '../server/trpc/router/_app'
+import type { inferRouterOutputs } from '@trpc/server';
 
-export type CompleteBuildData = Build & {
-	createdAt: string;
-	updatedAt: string;
-	author: User;
-	weapon: Weapon;
-	attachments: Attachment[]
-}
+type RouterOutput = inferRouterOutputs<AppRouter>;
+
+export type BuildGetOneResult = RouterOutput['build']['getOne'];
+
+export type BuildGetOneWithFavorited = (BuildGetOneResult & {
+	isFavorited: boolean
+})

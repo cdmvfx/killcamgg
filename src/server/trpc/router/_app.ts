@@ -4,13 +4,15 @@ import { router } from "../trpc";
 import { authRouter } from "./auth";
 import { weaponRouter } from './weapon';
 import { userRouter } from './user';
+import { reviewRouter } from './review';
 
 export const appRouter = router({
 	build: buildRouter,
 	auth: authRouter,
 	weapon: weaponRouter,
 	attachment: attachmentRouter,
-	user: userRouter
+	user: userRouter,
+	review: reviewRouter
 });
 
 // export type definition of API
