@@ -21,6 +21,7 @@ export const userRouter = router({
 							include: {
 								author: {
 									select: {
+										id: true,
 										name: true,
 										image: true,
 									},
@@ -38,6 +39,7 @@ export const userRouter = router({
 							include: {
 								author: {
 									select: {
+										id: true,
 										name: true,
 										image: true,
 									},

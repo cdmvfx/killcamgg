@@ -130,6 +130,7 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
         include: {
           author: {
             select: {
+              id: true,
               name: true,
               image: true,
             },
@@ -147,6 +148,7 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
         include: {
           author: {
             select: {
+              id: true,
               name: true,
               image: true,
             },

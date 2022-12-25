@@ -1,19 +1,20 @@
 import Link from "next/link";
-import type { CompleteBuildData } from "../../types/Builds";
 import { trpc } from "../../utils/trpc";
 import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
+import Spinner from "../ui/Spinner";
+
+import type { Attachment, Build, Weapon } from "@prisma/client";
 
 const BuildsList = () => {
   const { data: builds, isLoading } = trpc.build.getAll.useQuery();
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  if (isLoading || !builds) {
+    return <Spinner />;
   }
 
-  const buildsData: CompleteBuildData[] = JSON.parse(JSON.stringify(builds));
   return (
     <div className="flex w-full flex-col gap-4">
-      {buildsData.map((build, index) => {
+      {builds.map((build, index) => {
         return <BuildCard build={build} key={`build-${index}`} />;
       })}
     </div>
@@ -21,11 +22,21 @@ const BuildsList = () => {
 };
 
 type BuildCardProps = {
-  build: CompleteBuildData;
+  build: Build & {
+    weapon: Weapon;
+    author: {
+      id: string;
+      name: string | null;
+      image: string | null;
+    };
+    attachments: Attachment[];
+  };
 };
 
 export const BuildCard = (props: BuildCardProps) => {
   const { build } = props;
+
+  if (!build) return <Spinner />;
 
   return (
     <div className="w-full cursor-pointer bg-neutral-800">

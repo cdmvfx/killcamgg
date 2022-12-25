@@ -8,7 +8,13 @@ export const buildRouter = router({
 				include: {
 					weapon: true,
 					attachments: true,
-					author: true
+					author: {
+						select: {
+							id: true,
+							name: true,
+							image: true
+						}
+					}
 				}
 			});
 		}
