@@ -27,7 +27,7 @@ type BuildWithReviewsAndAuthor = Build & {
 };
 
 type ReviewWithAuthorAndBuild = Review & {
-  author: {
+  author?: {
     id: string;
     name: string | null;
     image: string | null;

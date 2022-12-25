@@ -1,4 +1,3 @@
-import type { GetStaticProps } from "next";
 import { prisma } from "../server/db/client";
 import Image from "next/image";
 import Heading from "../components/ui/Heading";
@@ -7,11 +6,15 @@ import { BuildCard } from "../components/features/BuildList";
 import { ReviewCard } from "../components/features/Reviews";
 import { trpc } from "../utils/trpc";
 
-type Props = {
-  user: ProfileDataSerialized;
-};
+import type {
+  NextPage,
+  GetStaticPropsContext,
+  InferGetStaticPropsType,
+} from "next";
 
-const ProfilePage = (props: Props) => {
+type PageProps = InferGetStaticPropsType<typeof getStaticProps>;
+
+const ProfilePage: NextPage<PageProps> = (props) => {
   const { user: userData } = props;
 
   const { data: session } = useSession();
@@ -34,7 +37,6 @@ const ProfilePage = (props: Props) => {
   const isCurrentUser = session && user.id === session.user?.id;
 
   console.log("User data", user);
-  console.log("specific", user.createdAt);
 
   return (
     <main>
@@ -106,7 +108,7 @@ const ProfilePage = (props: Props) => {
   );
 };
 
-export const getStaticProps: GetStaticProps = async (ctx) => {
+export const getStaticProps = async (ctx: GetStaticPropsContext) => {
   const { params } = ctx;
 
   if (!params || !params.username || typeof params.username !== "string") {
@@ -161,10 +163,6 @@ export const getStaticProps: GetStaticProps = async (ctx) => {
       notFound: true,
     };
   }
-
-  const userSerialized: ProfileDataSerialized = JSON.parse(
-    JSON.stringify(profileData)
-  );
 
   return { props: { user: profileData }, revalidate: 60 };
 };
