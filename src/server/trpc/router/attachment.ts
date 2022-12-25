@@ -1,5 +1,4 @@
 import type { AttachmentsByCategory } from './../../../types/Attachments';
-import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { AttachmentCategory } from "@prisma/client";
 import attachments from "../../../lib/attachments";
