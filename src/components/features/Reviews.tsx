@@ -1,4 +1,4 @@
-import type { Attachment, Build, Review, Weapon } from "@prisma/client";
+import type { Attachment, Build, Review, User, Weapon } from "@prisma/client";
 import Link from "next/link";
 import { IoMdStar, IoMdStarOutline } from "react-icons/io";
 import { z } from "zod";
@@ -6,6 +6,8 @@ import { trpc } from "../../utils/trpc";
 import UserAvatar from "../ui/UserAvatar";
 import { useState } from "react";
 import Alert from "../ui/Alert";
+import { useSession } from "next-auth/react";
+import Spinner from "../ui/Spinner";
 
 type BuildWithReviewsAndAuthor = Build & {
   weapon: Weapon;
@@ -36,10 +38,18 @@ type ReviewWithAuthorAndBuild = Review & {
 type ReviewCardProps = {
   build?: BuildWithReviewsAndAuthor;
   review: ReviewWithAuthorAndBuild;
+  setShowReviewForm?: (show: boolean) => void;
 };
 
 export const ReviewCard = (props: ReviewCardProps) => {
-  const { build, review } = props;
+  const { build, review, setShowReviewForm } = props;
+
+  const { data: session } = useSession();
+
+  const handleClickEdit = () => {
+    if (!setShowReviewForm) return;
+    setShowReviewForm(true);
+  };
 
   return (
     <div className="border-b border-neutral-500 pb-4 last:border-b-0 last:pb-0">
@@ -51,11 +61,16 @@ export const ReviewCard = (props: ReviewCardProps) => {
         </div>
       )}
       {review.author && (
-        <div className="mb-2">
+        <div className="mb-2 flex items-center justify-between">
           <UserAvatar user={review.author} showAvatar={true} />
+          {review.authorId === session?.user?.id && (
+            <button className="tertiary p-0" onClick={handleClickEdit}>
+              Edit
+            </button>
+          )}
         </div>
       )}
-      <div className="mb-2">
+      <div className="">
         <div className="mb-2 flex items-center gap-4">
           <span className="flex text-orange-500">
             {[1, 2, 3, 4, 5].map((number) => {
@@ -73,7 +88,12 @@ export const ReviewCard = (props: ReviewCardProps) => {
           </span>
           {new Date(review.createdAt).toDateString()}
         </div>
-        <div>{review.content}</div>
+        <div className="mb-2">{review.content}</div>
+        <div className="text-xs italic text-neutral-500">
+          {review.createdAt.toDateString() !== review.updatedAt.toDateString()
+            ? `Last Edited: ${review.updatedAt.toDateString()}`
+            : ""}
+        </div>
       </div>
     </div>
   );
@@ -82,10 +102,11 @@ export const ReviewCard = (props: ReviewCardProps) => {
 type ReviewListProps = {
   build?: BuildWithReviewsAndAuthor;
   reviews: ReviewWithAuthorAndBuild[];
+  setShowReviewForm?: (show: boolean) => void;
 };
 
 export const ReviewList = (props: ReviewListProps) => {
-  const { reviews, build } = props;
+  const { reviews, build, setShowReviewForm } = props;
 
   return (
     <div className="flex flex-col gap-8">
@@ -95,6 +116,7 @@ export const ReviewList = (props: ReviewListProps) => {
             key={`review-${review.id}`}
             review={review}
             build={build}
+            setShowReviewForm={setShowReviewForm}
           />
         );
       })}
@@ -105,33 +127,135 @@ export const ReviewList = (props: ReviewListProps) => {
 type ReviewFormProps = {
   build: Build;
   setShowReviewForm: (show: boolean) => void;
+  existingReview?: Review;
+  user:
+    | (User & {
+        favorites: Build[];
+      })
+    | null;
 };
 
 export const ReviewForm = (props: ReviewFormProps) => {
-  const { setShowReviewForm, build } = props;
+  const { setShowReviewForm, build, existingReview, user } = props;
 
   type FormErrors = {
     rating: string[];
     content: string[];
+    general?: string[];
   };
 
-  const [rating, setRating] = useState(0);
-  const [content, setContent] = useState("");
+  const [rating, setRating] = useState(
+    existingReview ? existingReview.rating : 0
+  );
+  const [content, setContent] = useState(
+    existingReview && existingReview.content ? existingReview.content : ""
+  );
   const [errors, setErrors] = useState<FormErrors>({
     rating: [],
     content: [],
+    general: [],
   });
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const utils = trpc.useContext();
 
-  const postReview = trpc.review.postReview.useMutation({
-    onSuccess: () => {
+  const postReview = trpc.review.post.useMutation({
+    onSuccess: async () => {
+      utils.build.getOne.setData({ id: build.id }, (old) => {
+        if (!old) return;
+        return {
+          ...old,
+          reviews: [
+            ...old.reviews,
+            {
+              id: "temp",
+              author: {
+                id: user?.id || "temp",
+                name: user?.name || "temp",
+                image: user?.image || "temp",
+              },
+              authorId: user?.id || "temp",
+              rating: rating,
+              content: content,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              buildId: build.id,
+            },
+          ],
+        };
+      });
       setShowReviewForm(false);
       utils.build.getOne.invalidate({ id: build.id });
     },
+    onError: async (error) => {
+      setErrors({ rating: [], content: [], general: [error.message] });
+    },
   });
 
-  const submitReview = () => {
+  const editReview = trpc.review.edit.useMutation({
+    onSuccess: async () => {
+      utils.build.getOne.setData({ id: build.id }, (old) => {
+        if (!old) return;
+        return {
+          ...old,
+          reviews: [
+            ...old.reviews.filter((review) => review.id !== existingReview?.id),
+
+            {
+              id: existingReview?.id || "temp",
+              author: {
+                id: user?.id || "temp",
+                name: user?.name || "temp",
+                image: user?.image || "temp",
+              },
+              authorId: existingReview?.authorId || "temp",
+              rating: rating,
+              content: content,
+              createdAt: existingReview?.createdAt || new Date(),
+              updatedAt: new Date(),
+              buildId: build.id,
+            },
+          ],
+        };
+      });
+      setShowReviewForm(false);
+      utils.build.getOne.invalidate({ id: build.id });
+    },
+    onError: async (error) => {
+      setErrors({ rating: [], content: [], general: [error.message] });
+    },
+  });
+
+  const deleteReviewMutation = trpc.review.delete.useMutation({
+    onSuccess: async () => {
+      utils.build.getOne.setData({ id: build.id }, (old) => {
+        if (!old) return;
+        return {
+          ...old,
+          reviews: [
+            ...old.reviews.filter((review) => review.id !== existingReview?.id),
+          ],
+        };
+      });
+      setShowDeleteModal(false);
+      setShowReviewForm(true);
+      setRating(0);
+      setContent("");
+      utils.build.getOne.invalidate({ id: build.id });
+    },
+    onError: async (error) => {
+      setErrors({ rating: [], content: [], general: [error.message] });
+    },
+  });
+
+  const handleSubmitClick = () => {
+    setErrors({
+      rating: [],
+      content: [],
+      general: [],
+    });
+
     const reviewSchema = z.object({
       rating: z
         .number()
@@ -141,14 +265,9 @@ export const ReviewForm = (props: ReviewFormProps) => {
         .max(5, {
           message: "Rating must be at most 5",
         }),
-      content: z
-        .string()
-        .min(30, {
-          message: "Review must be at least 30 characters long",
-        })
-        .max(500, {
-          message: "Review must be at most 500 characters long",
-        }),
+      content: z.string().max(500, {
+        message: "Review must be at most 500 characters long",
+      }),
     });
 
     try {
@@ -160,11 +279,42 @@ export const ReviewForm = (props: ReviewFormProps) => {
       return;
     }
 
+    if (existingReview) {
+      editReview.mutate({
+        buildId: existingReview.buildId,
+        rating,
+        content,
+      });
+      return;
+    }
+
     postReview.mutate({
       buildId: build.id,
       rating,
       content,
     });
+  };
+
+  const handleCancelClick = () => {
+    setShowReviewForm(false);
+    setRating(existingReview ? existingReview.rating : 0);
+    setContent(
+      existingReview && existingReview.content ? existingReview.content : ""
+    );
+  };
+
+  const handleDeleteClick = () => {
+    if (!existingReview) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+  };
+
+  const handleDeleteFinal = () => {
+    if (!existingReview) return;
+    deleteReviewMutation.mutate({ id: existingReview.id });
   };
 
   return (
@@ -201,27 +351,75 @@ export const ReviewForm = (props: ReviewFormProps) => {
           ))}
       </div>
       <div>
-        <label htmlFor="review">Review</label>
+        <label htmlFor="review">Review (optional)</label>
         <textarea
           name="review"
           id="review"
           value={content}
           onChange={(e) => setContent(e.target.value)}
         />
-        {errors.content &&
-          errors.content.map((error, index) => (
-            <Alert
-              key={`review-error-${index}`}
-              status="error"
-              message={error}
-            />
-          ))}
+        {errors.content.map((error, index) => (
+          <Alert key={`review-error-${index}`} status="error" message={error} />
+        ))}
       </div>
-      <div>
-        <button className="w-full" onClick={submitReview}>
-          Submit Review
-        </button>
-      </div>
+      {!showDeleteModal && (
+        <div>
+          {postReview.isLoading || editReview.isLoading ? (
+            <Spinner />
+          ) : (
+            <>
+              <button className="w-full" onClick={handleSubmitClick}>
+                {existingReview ? "Save Review" : "Post Review"}
+              </button>
+              {existingReview && (
+                <>
+                  <button
+                    className="secondary mt-2 w-full"
+                    onClick={handleDeleteClick}
+                  >
+                    Delete Review
+                  </button>
+                  <button
+                    className="tertiary mt-2 w-full"
+                    onClick={handleCancelClick}
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
+      {showDeleteModal && (
+        <div>
+          <div className="mb-2">
+            Are you sure you want to delete your review?
+          </div>
+          {deleteReviewMutation.isLoading ? (
+            <Spinner />
+          ) : (
+            <>
+              <button className="w-full" onClick={handleDeleteFinal}>
+                Delete
+              </button>
+              <button
+                className="secondary mt-2 w-full"
+                onClick={handleDeleteCancel}
+              >
+                Cancel
+              </button>
+            </>
+          )}
+        </div>
+      )}
+      {errors.general?.map((error, index) => (
+        <Alert
+          key={`submission-error-${index}`}
+          status="error"
+          message={error}
+        />
+      ))}
     </div>
   );
 };

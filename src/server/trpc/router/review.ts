@@ -1,13 +1,15 @@
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import { TRPCError } from '@trpc/server';
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { router, protectedProcedure } from "../trpc";
 
 export const reviewRouter = router({
-	postReview: protectedProcedure
+	post: protectedProcedure
 		.input(
 			z.object({
 				buildId: z.string(),
 				rating: z.number(),
-				content: z.string(),
+				content: z.string().nullable(),
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -22,10 +24,16 @@ export const reviewRouter = router({
 				})
 			}
 			catch (error) {
-				console.log('Error in build.postReview: ', error);
+				console.log('Error in review.postReview: ', error);
+				if (error instanceof PrismaClientKnownRequestError) {
+					throw new TRPCError({
+						code: "CONFLICT",
+						message: "You have already submitted a review for this build. Please edit your existing review instead."
+					})
+				}
 			}
 		}),
-	editReview: protectedProcedure
+	edit: protectedProcedure
 		.input(
 			z.object({
 				buildId: z.string(),
@@ -37,7 +45,10 @@ export const reviewRouter = router({
 			try {
 				await ctx.prisma.review.update({
 					where: {
-						id
+						authorId_buildId: {
+							authorId: ctx.session.user.id,
+							buildId: input.buildId
+						}
 					},
 					data: {
 						rating: input.rating,
@@ -46,7 +57,25 @@ export const reviewRouter = router({
 				})
 			}
 			catch (error) {
-				console.log('Error in build.editReview: ', error);
+				console.log('Error in review.editReview: ', error);
+			}
+		}),
+	delete: protectedProcedure
+		.input(
+			z.object({
+				id: z.string()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				await ctx.prisma.review.delete({
+					where: {
+						id: input.id
+					}
+				})
+			}
+			catch (error) {
+				console.log('Error in review.deleteReview: ', error);
 			}
 		})
 })

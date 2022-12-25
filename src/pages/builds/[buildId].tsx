@@ -2,29 +2,19 @@ import Link from "next/link";
 import Heading from "../../components/ui/Heading";
 import Panel from "../../components/ui/Panel";
 import UserAvatar from "../../components/ui/UserAvatar";
-import {
-  ReviewCard,
-  ReviewForm,
-  ReviewList,
-} from "../../components/features/Reviews";
-import {
-  IoMdHeart,
-  IoMdHeartEmpty,
-  IoMdStar,
-  IoMdStarOutline,
-} from "react-icons/io";
+import { ReviewForm, ReviewList } from "../../components/features/Reviews";
+import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
 import { prisma } from "../../server/db/client";
 import { trpc } from "../../utils/trpc";
 import { useState } from "react";
-import { z } from "zod";
-import Alert from "../../components/ui/Alert";
 
 import type {
   GetServerSidePropsContext,
   InferGetServerSidePropsType,
   NextPage,
 } from "next";
+import type { Review } from "@prisma/client";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
@@ -33,7 +23,7 @@ const BuildPage: NextPage<PageProps> = (props) => {
 
   const utils = trpc.useContext();
 
-  const { data: build, refetch: refetchBuildData } = trpc.build.getOne.useQuery(
+  const { data: build } = trpc.build.getOne.useQuery(
     { id: initialBuildData.id },
     {
       initialData: initialBuildData,
@@ -103,8 +93,9 @@ const BuildPage: NextPage<PageProps> = (props) => {
 
   if (user === undefined) return <div>Loading user...</div>;
 
-  console.log("Build", build);
-  console.log("User", user);
+  const existingReview = build.reviews.find(
+    (review) => review.authorId === user?.id
+  );
 
   return (
     <main>
@@ -136,7 +127,11 @@ const BuildPage: NextPage<PageProps> = (props) => {
                   build={build}
                 />
                 <BuildInfo build={build} />
-                <BuildReviews build={build} user={user} />
+                <BuildReviews
+                  build={build}
+                  user={user}
+                  existingReview={existingReview}
+                />
               </div>
             </>
           )}
@@ -235,13 +230,48 @@ const BuildInfo = ({ build }: Omit<PageProps, "user">) => {
   );
 };
 
-const BuildReviews = ({ build, user }: PageProps) => {
-  const [showReviewForm, setShowReviewForm] = useState(false);
+const BuildReviews = (props: PageProps & { existingReview?: Review }) => {
+  const { build, user, existingReview } = props;
+
+  const [showReviewForm, setShowReviewForm] = useState(
+    existingReview ? false : true
+  );
 
   return (
     <section>
       <Heading>Reviews</Heading>
       <div className="flex flex-col gap-4">
+        {!user || (user && build.authorId !== user.id) ? (
+          <Panel>
+            <div className="px-4">
+              {user === null && (
+                <button className="w-full">
+                  <Link href={`/`}>Sign in to review this build!</Link>
+                </button>
+              )}
+              {user && build.authorId !== user.id && !showReviewForm && (
+                <>
+                  <button
+                    className="w-full"
+                    onClick={() => setShowReviewForm(true)}
+                  >
+                    Edit Review
+                  </button>
+                </>
+              )}
+              {user && build.authorId !== user.id && showReviewForm && (
+                <ReviewForm
+                  build={build}
+                  setShowReviewForm={setShowReviewForm}
+                  existingReview={existingReview}
+                  user={user}
+                />
+              )}
+            </div>
+          </Panel>
+        ) : (
+          ""
+        )}
         {!build.reviews.length ? (
           <Panel>
             <div className="px-4">
@@ -251,32 +281,14 @@ const BuildReviews = ({ build, user }: PageProps) => {
         ) : (
           <Panel>
             <div className="px-4">
-              <ReviewList build={build} reviews={build.reviews} />
+              <ReviewList
+                build={build}
+                reviews={build.reviews}
+                setShowReviewForm={setShowReviewForm}
+              />
             </div>
           </Panel>
         )}
-        <Panel>
-          <div className="px-4">
-            {user === null && (
-              <button className="w-full">
-                <Link href={`/`}>Sign in to review this build!</Link>
-              </button>
-            )}
-            {user && build.authorId !== user.id && !showReviewForm && (
-              <>
-                <button
-                  className="w-full"
-                  onClick={() => setShowReviewForm((state) => !state)}
-                >
-                  Review this build!
-                </button>
-              </>
-            )}
-            {user && build.authorId !== user.id && showReviewForm && (
-              <ReviewForm build={build} setShowReviewForm={setShowReviewForm} />
-            )}
-          </div>
-        </Panel>
       </div>
     </section>
   );
