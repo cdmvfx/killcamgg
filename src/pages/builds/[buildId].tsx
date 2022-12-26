@@ -119,7 +119,7 @@ const BuildPage: NextPage<PageProps> = (props) => {
                   </div>
                 </div>
               </section>
-              <div className="p-4">
+              <section className="p-4">
                 <BuildRatingSummary
                   isFavorited={isFavorited}
                   changeFavorite={changeFavorite}
@@ -132,7 +132,7 @@ const BuildPage: NextPage<PageProps> = (props) => {
                   user={user}
                   existingReview={existingReview}
                 />
-              </div>
+              </section>
             </>
           )}
         </div>
@@ -240,7 +240,7 @@ const BuildReviews = (props: PageProps & { existingReview?: Review }) => {
   return (
     <section>
       <Heading>Reviews</Heading>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col">
         {!user || (user && build.authorId !== user.id) ? (
           <Panel>
             <div className="px-4">

@@ -19,6 +19,10 @@ h2 {
   @apply text-2xl;
 }
 
+h3 {
+  @apply text-xl font-bold;
+}
+
 label {
   @apply inline-block text-xs font-bold uppercase tracking-wider;
 }

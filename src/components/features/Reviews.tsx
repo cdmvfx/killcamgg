@@ -319,6 +319,7 @@ export const ReviewForm = (props: ReviewFormProps) => {
 
   return (
     <div className="flex flex-col gap-4">
+      <h3>{existingReview ? "Edit Your Review" : "Post A Review"}</h3>
       <div>
         <label htmlFor="rating">Rating</label>
         <div className="flex gap-0 text-2xl text-orange-400">
