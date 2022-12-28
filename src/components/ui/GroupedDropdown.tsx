@@ -4,17 +4,14 @@ import type {
   Weapon,
   WeaponCategory,
 } from "@prisma/client";
-import type { Dispatch, SetStateAction } from "react";
 import type { WeaponsByCategory } from "../../types/Weapons";
 import { useState } from "react";
 import type { AttachmentsByCategory } from "../../types/Attachments";
 
 type GroupedDropdownProps = {
   data: WeaponsByCategory | AttachmentsByCategory;
-  selectedItem: Weapon | Attachment | undefined;
-  setSelectedItem:
-    | Dispatch<SetStateAction<Weapon | Attachment | undefined>>
-    | ((item: Weapon | Attachment | undefined) => void);
+  selectedItem: Weapon | Attachment | null;
+  setSelectedItem: (item: Weapon | Attachment | null) => void;
   selectedAttachments?: Attachment[];
 };
 
@@ -27,7 +24,7 @@ const GroupedDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const selectItem = (item: Weapon | Attachment) => {
+  const selectItem = (item: Weapon | Attachment | null) => {
     setSelectedItem(item);
     setIsOpen(false);
   };
@@ -49,7 +46,7 @@ const GroupedDropdown = ({
         </div>
       </div>
       {isOpen && (
-        <div className="absolute top-[55px] left-0 z-10 h-[50vh] w-full overflow-scroll border border-neutral-400 bg-neutral-600">
+        <div className="absolute top-[55px] left-0 z-10 h-[50vh] w-full overflow-scroll bg-neutral-900">
           {Object.keys(data).map((category) => {
             if (
               selectedAttachments &&

@@ -5,6 +5,7 @@ module.exports = {
     extend: {
       fontFamily: {
         cutive: ['"Cutive Mono"', "monospace"],
+        jost: ['"Jost"', "sans-serif"],
       },
     },
   },

@@ -1,12 +1,6 @@
-import type { AppRouter } from '../server/trpc/router/_app'
-import type { inferRouterOutputs } from '@trpc/server';
+import type { RouterOutputs } from "../utils/trpc";
 
-type RouterOutput = inferRouterOutputs<AppRouter>;
 
-export type BuildGetAllResult = RouterOutput['build']['getAll'];
+export type BuildGetAllResult = RouterOutputs['build']['getAll'];
 
-export type BuildGetOneResult = RouterOutput['build']['getOne'];
-
-export type BuildGetOneWithFavorited = (BuildGetOneResult & {
-	isFavorited: boolean
-})
+export type BuildGetOneResult = RouterOutputs['build']['getOne'];

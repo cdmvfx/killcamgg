@@ -1,45 +1,43 @@
 import { type NextPage } from "next";
-import { signIn, signOut, useSession } from "next-auth/react";
-import Link from "next/link";
-import BuildForm from "../components/features/BuildForm";
+import { signOut, useSession } from "next-auth/react";
 import BuildsList from "../components/features/BuildList";
 import Heading from "../components/ui/Heading";
+import { trpc } from "../utils/trpc";
+import SignInButton from "../components/ui/SignInButton";
+import { useRouter } from "next/router";
 
 const Home: NextPage = () => {
   const { data: session } = useSession();
 
+  const { data: user } = trpc.user.getOne.useQuery({
+    id: session?.user?.id ?? null,
+  });
+
+  const userFavorites = user
+    ? user.favorites.map((favorite) => favorite.id)
+    : null;
+
+  const router = useRouter();
+
   return (
-    <main className="flex w-full flex-col items-center px-4 pt-10">
-      <h1>Killcam.GG</h1>
+    <main className="flex w-full flex-col items-center px-4 pt-8">
       <div className="w-full">
-        <div className="mb-4">
-          {session ? (
-            <>
-              <div className="flex flex-col items-center">
-                <h2>Hello {session.user?.name}!</h2>
-                <button className="tertiary" onClick={() => signOut()}>
-                  Logout
-                </button>
-              </div>
-              <BuildForm />
-            </>
-          ) : (
-            <>
-              <button onClick={() => signIn("discord")} className="w-full">
-                Login with Discord
-              </button>
-              <button onClick={() => signIn("twitch")} className="w-full">
-                Login with Twitch
-              </button>
-            </>
-          )}
-        </div>
+        {!session && (
+          <div className="mb-4">
+            <SignInButton platform="discord" />
+            <SignInButton platform="twitch" />
+          </div>
+        )}
         <div className="">
-          <Heading>Top Rated Builds</Heading>
-          <Link href="/builds">
-            <button className="mb-4 w-full">View All</button>
-          </Link>
-          <BuildsList />
+          <Heading
+            primaryAction={{
+              label: "View All",
+              onClick: () => router.push("/builds"),
+            }}
+          >
+            Top Rated Builds
+          </Heading>
+          <BuildsList userFavorites={userFavorites} />
         </div>
       </div>
     </main>

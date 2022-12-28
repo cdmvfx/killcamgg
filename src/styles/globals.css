@@ -7,12 +7,11 @@
 }
 
 body {
-  @apply bg-neutral-900 text-neutral-100;
+  @apply min-h-screen bg-gradient-to-br from-[#2F3E46] to-[#52796F] text-neutral-100;
 }
 
 h1 {
-  @apply mb-2 text-3xl font-bold;
-  font-family: "Cutive Mono";
+  @apply mb-2 font-jost text-3xl font-bold;
 }
 
 h2 {
@@ -24,28 +23,39 @@ h3 {
 }
 
 label {
-  @apply inline-block text-xs font-bold uppercase tracking-wider;
+  @apply mb-2 inline-block font-jost text-xs font-bold uppercase tracking-wider;
+}
+
+.build-info label {
+  @apply mb-0;
 }
 
 input,
 textarea,
 select,
 .grouped-dropdown {
-  @apply mb-1 block w-full border border-neutral-400 bg-neutral-500 px-4 py-2 placeholder-neutral-300;
+  @apply block w-full rounded-md bg-black bg-opacity-30 px-4 py-2 placeholder-neutral-300;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+.grouped-dropdown:focus {
+  @apply outline outline-orange-500;
 }
 
 button {
-  @apply mb-2 border border-orange-700 bg-orange-700 px-4 py-2 font-bold tracking-wide text-white;
+  @apply mb-2 w-full rounded-md border border-orange-600 bg-orange-600 px-4 py-2 font-bold tracking-wide text-white;
 }
 
 button.secondary {
-  @apply border border-neutral-400 bg-transparent;
+  @apply border border-orange-600 bg-transparent;
 }
 
 button.tertiary {
   @apply border-none bg-transparent;
 }
 
-button:not(:last-of-type) {
+.panel button:last-of-type {
   @apply mb-0;
 }

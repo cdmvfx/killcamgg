@@ -2,13 +2,22 @@ import React from "react";
 
 type HeadingProps = {
   children: React.ReactNode;
+  primaryAction?: {
+    label: string;
+    onClick: () => void;
+  };
 };
 
-const Heading = ({ children }: HeadingProps) => {
+const Heading = ({ children, primaryAction }: HeadingProps) => {
   return (
-    <div className="mb-4 border-b border-neutral-500 font-cutive text-2xl">
+    <h2 className="mb-2 flex items-center justify-between font-jost text-2xl">
       {children}
-    </div>
+      {primaryAction && (
+        <button className="mb-0 w-fit text-sm" onClick={primaryAction.onClick}>
+          {primaryAction.label}
+        </button>
+      )}
+    </h2>
   );
 };
 

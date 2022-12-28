@@ -8,6 +8,7 @@ import { getServerAuthSession } from "../../server/common/get-server-auth-sessio
 import { prisma } from "../../server/db/client";
 import { trpc } from "../../utils/trpc";
 import { useState } from "react";
+import BuildForm from "../../components/features/BuildForm";
 
 import type {
   GetServerSidePropsContext,
@@ -15,11 +16,14 @@ import type {
   NextPage,
 } from "next";
 import type { Review } from "@prisma/client";
+import type { Dispatch, SetStateAction } from "react";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
 const BuildPage: NextPage<PageProps> = (props) => {
   const { build: initialBuildData, user: initialUserData } = props;
+
+  const [showBuildForm, setShowBuildForm] = useState(false);
 
   const utils = trpc.useContext();
 
@@ -39,6 +43,10 @@ const BuildPage: NextPage<PageProps> = (props) => {
       initialData: initialUserData,
     }
   );
+
+  console.log("user", user);
+
+  if (user === undefined) return <div>Loading user...</div>;
 
   const { mutate: toggleFavoriteMutation } =
     trpc.user.toggleFavorite.useMutation({
@@ -91,8 +99,6 @@ const BuildPage: NextPage<PageProps> = (props) => {
     ? user.favorites.some((favorite) => favorite.id === build.id)
     : false;
 
-  if (user === undefined) return <div>Loading user...</div>;
-
   const existingReview = build.reviews.find(
     (review) => review.authorId === user?.id
   );
@@ -103,28 +109,38 @@ const BuildPage: NextPage<PageProps> = (props) => {
         <div className="">
           {build && (
             <>
-              <section className="flex flex-col gap-2 bg-neutral-800 p-4">
+              <section className="flex flex-col gap-2 bg-black bg-opacity-50 p-4">
                 <h1 className="mb-0">{build.title}</h1>
                 <div className="w-fit">
                   <UserAvatar user={build.author} showAvatar={true} />
                 </div>
                 <div className="flex gap-8">
                   <div className="basis-1/2">
-                    <label>Created</label>
-                    <div>{new Date(build.createdAt).toDateString()}</div>
+                    <label>
+                      Created
+                      <br />
+                      {new Date(build.createdAt).toLocaleDateString()}
+                    </label>
+                    <div></div>
                   </div>
                   <div className="basis-1/2">
-                    <label>Last Updated</label>
-                    <div>{new Date(build.updatedAt).toDateString()}</div>
+                    <label>
+                      Last Updated
+                      <br />
+                      {new Date(build.updatedAt).toLocaleDateString()}
+                    </label>
                   </div>
                 </div>
               </section>
               <section className="p-4">
                 <BuildRatingSummary
-                  isFavorited={isFavorited}
-                  changeFavorite={changeFavorite}
                   user={user}
                   build={build}
+                  isFavorited={isFavorited}
+                  changeFavorite={changeFavorite}
+                  averageRating={build.averageRating}
+                  showBuildForm={showBuildForm}
+                  setShowBuildForm={setShowBuildForm}
                 />
                 <BuildInfo build={build} />
                 <BuildReviews
@@ -142,13 +158,19 @@ const BuildPage: NextPage<PageProps> = (props) => {
 };
 
 const BuildRatingSummary = ({
-  isFavorited,
-  changeFavorite,
   user,
   build,
+  isFavorited,
+  changeFavorite,
+  averageRating,
+  showBuildForm,
+  setShowBuildForm,
 }: PageProps & {
   isFavorited: boolean;
   changeFavorite: () => void;
+  averageRating: number;
+  showBuildForm?: boolean;
+  setShowBuildForm?: Dispatch<SetStateAction<boolean>>;
 }) => {
   return (
     <section className="mb-4">
@@ -158,10 +180,10 @@ const BuildRatingSummary = ({
             <span className="text-orange-500">
               <IoMdStar />
             </span>{" "}
-            5
+            {averageRating.toFixed(1) || "0.0"}
           </div>
           <div className="">
-            <div>1337 Ratings</div>
+            <div>{build.reviews.length} Reviews</div>
           </div>
         </div>
         {user && build.authorId === user.id ? (
@@ -177,15 +199,29 @@ const BuildRatingSummary = ({
       </div>
       <div className="">
         {user && build.authorId !== user.id && (
-          <button className="mb-0 w-full ">Review this build!</button>
-        )}
-        {user && build.authorId === user.id && (
-          <button className="mb-0 w-full ">Edit Build</button>
+          <button className=" ">Review this build!</button>
         )}
         {user === null && (
-          <button className="w-full">
+          <button className="">
             <Link href={`/`}>Sign in to review this build!</Link>
           </button>
+        )}
+        {user &&
+          build.authorId === user.id &&
+          !showBuildForm &&
+          setShowBuildForm && (
+            <button
+              className="mb-0 w-full "
+              onClick={() => setShowBuildForm(true)}
+            >
+              Edit Build
+            </button>
+          )}
+        {user && build.authorId === user.id && showBuildForm && (
+          <BuildForm
+            existingBuild={build}
+            setShowBuildForm={setShowBuildForm}
+          />
         )}
       </div>
     </section>
@@ -197,34 +233,36 @@ const BuildInfo = ({ build }: Omit<PageProps, "user">) => {
     <section>
       <Heading>Build Information</Heading>
       <Panel>
-        <div className="px-4">
-          {build.description && (
+        <Panel.Column>
+          <div className="build-info">
+            {build.description && (
+              <div className="mb-4">
+                <label>Description</label>
+                <p>{build.description}</p>
+              </div>
+            )}
             <div className="mb-4">
-              <label>Description</label>
-              <p>{build.description}</p>
+              <label>{build.weapon.category}</label>
+              <div>{build.weapon.name}</div>
             </div>
-          )}
-          <div className="mb-4">
-            <label>{build.weapon.category}</label>
-            <div>{build.weapon.name}</div>
-          </div>
-          <div>
-            <div className="flex flex-col justify-center gap-4">
-              {build.attachments.map((attachment, index) => {
-                return (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="h-10 w-10 bg-orange-600"></div>
-                    <div className="flex flex-col">
-                      <label>{attachment.category}</label>
-                      <div>{attachment.name}</div>
+            <div>
+              <div className="flex flex-col justify-center gap-4">
+                {build.attachments.map((attachment, index) => {
+                  return (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="h-10 w-10 bg-orange-600"></div>
+                      <div className="flex flex-col">
+                        <label>{attachment.category}</label>
+                        <div>{attachment.name}</div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
+            <div>{build.weapon.unlock_req}</div>
           </div>
-          <div>{build.weapon.unlock_req}</div>
-        </div>
+        </Panel.Column>
       </Panel>
     </section>
   );
@@ -241,52 +279,38 @@ const BuildReviews = (props: PageProps & { existingReview?: Review }) => {
     <section>
       <Heading>Reviews</Heading>
       <div className="flex flex-col">
-        {!user || (user && build.authorId !== user.id) ? (
+        {!user && (
+          <button className="w-full">
+            <Link href={`/`}>Sign in to review this build!</Link>
+          </button>
+        )}
+        {user && build.authorId !== user.id && showReviewForm && (
           <Panel>
-            <div className="px-4">
-              {user === null && (
-                <button className="w-full">
-                  <Link href={`/`}>Sign in to review this build!</Link>
-                </button>
-              )}
-              {user && build.authorId !== user.id && !showReviewForm && (
-                <>
-                  <button
-                    className="w-full"
-                    onClick={() => setShowReviewForm(true)}
-                  >
-                    Edit Review
-                  </button>
-                </>
-              )}
-              {user && build.authorId !== user.id && showReviewForm && (
-                <ReviewForm
-                  build={build}
-                  setShowReviewForm={setShowReviewForm}
-                  existingReview={existingReview}
-                  user={user}
-                />
-              )}
-            </div>
+            <Panel.Column>
+              <ReviewForm
+                build={build}
+                setShowReviewForm={setShowReviewForm}
+                existingReview={existingReview}
+                user={user}
+              />
+            </Panel.Column>
           </Panel>
-        ) : (
-          ""
         )}
         {!build.reviews.length ? (
           <Panel>
-            <div className="px-4">
-              <div className="mb-2 text-center">No reviews yet!</div>
-            </div>
+            <Panel.Column>
+              <div className="text-center">No reviews yet!</div>
+            </Panel.Column>
           </Panel>
         ) : (
           <Panel>
-            <div className="px-4">
+            <Panel.Column>
               <ReviewList
                 build={build}
                 reviews={build.reviews}
                 setShowReviewForm={setShowReviewForm}
               />
-            </div>
+            </Panel.Column>
           </Panel>
         )}
       </div>

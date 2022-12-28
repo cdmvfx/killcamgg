@@ -11,6 +11,7 @@ import type {
   GetStaticPropsContext,
   InferGetStaticPropsType,
 } from "next";
+import Panel from "../components/ui/Panel";
 
 type PageProps = InferGetStaticPropsType<typeof getStaticProps>;
 
@@ -40,7 +41,7 @@ const ProfilePage: NextPage<PageProps> = (props) => {
 
   return (
     <main>
-      <section className="flex flex-col gap-2 bg-neutral-800 p-4">
+      <section className="flex flex-col gap-2 bg-black bg-opacity-50 p-4">
         <div className="flex items-center gap-4">
           <div>
             <Image
@@ -92,6 +93,13 @@ const ProfilePage: NextPage<PageProps> = (props) => {
           {user.favorites.map((build, index) => (
             <BuildCard key={`favorite-${index}`} build={build} />
           ))}
+          {user.favorites.length === 0 && (
+            <Panel>
+              <Panel.Column>
+                <div className="text-center">No favorites yet!</div>
+              </Panel.Column>
+            </Panel>
+          )}
         </div>
       </section>
       <section className="p-4">
@@ -102,6 +110,13 @@ const ProfilePage: NextPage<PageProps> = (props) => {
           {user.reviews.map((review, index) => (
             <ReviewCard key={`favorite-${index}`} review={review} />
           ))}
+          {user.reviews.length === 0 && (
+            <Panel>
+              <Panel.Column>
+                <div className="text-center">No reviews yet!</div>
+              </Panel.Column>
+            </Panel>
+          )}
         </div>
       </section>
     </main>

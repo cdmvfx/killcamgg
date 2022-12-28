@@ -88,18 +88,20 @@ enum SocialPlatforms {
 }
 
 model Build {
-  id          String       @id @default(cuid())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  authorId    String
-  author      User         @relation("User Builds", fields: [authorId], references: [id])
-  title       String
-  description String?
-  weapon      Weapon       @relation(fields: [weaponId], references: [id])
-  weaponId    Int
-  attachments Attachment[]
-  reviews     Review[]
-  favorites   User[]       @relation("User Favorites")
+  id            String       @id @default(cuid())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  authorId      String
+  author        User         @relation("User Builds", fields: [authorId], references: [id])
+  title         String
+  description   String?
+  weapon        Weapon       @relation(fields: [weaponId], references: [id])
+  weaponId      Int
+  attachments   Attachment[]
+  reviews       Review[]
+  favorites     User[]       @relation("User Favorites")
+  averageRating Float        @default(0)
+  totalReviews  Int          @default(0)
 }
 
 model Weapon {

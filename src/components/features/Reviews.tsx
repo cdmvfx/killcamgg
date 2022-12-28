@@ -64,7 +64,7 @@ export const ReviewCard = (props: ReviewCardProps) => {
         <div className="mb-2 flex items-center justify-between">
           <UserAvatar user={review.author} showAvatar={true} />
           {review.authorId === session?.user?.id && (
-            <button className="tertiary p-0" onClick={handleClickEdit}>
+            <button className="tertiary w-fit p-0" onClick={handleClickEdit}>
               Edit
             </button>
           )}
@@ -314,7 +314,7 @@ export const ReviewForm = (props: ReviewFormProps) => {
 
   const handleDeleteFinal = () => {
     if (!existingReview) return;
-    deleteReviewMutation.mutate({ id: existingReview.id });
+    deleteReviewMutation.mutate({ id: existingReview.id, buildId: build.id });
   };
 
   return (
@@ -369,21 +369,15 @@ export const ReviewForm = (props: ReviewFormProps) => {
             <Spinner />
           ) : (
             <>
-              <button className="w-full" onClick={handleSubmitClick}>
+              <button className="" onClick={handleSubmitClick}>
                 {existingReview ? "Save Review" : "Post Review"}
               </button>
               {existingReview && (
                 <>
-                  <button
-                    className="secondary mt-2 w-full"
-                    onClick={handleDeleteClick}
-                  >
+                  <button className="secondary" onClick={handleDeleteClick}>
                     Delete Review
                   </button>
-                  <button
-                    className="tertiary mt-2 w-full"
-                    onClick={handleCancelClick}
-                  >
+                  <button className="tertiary" onClick={handleCancelClick}>
                     Cancel
                   </button>
                 </>

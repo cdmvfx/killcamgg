@@ -10,28 +10,71 @@ import Panel from "../ui/Panel";
 import type { AttachmentsByCategory } from "../../types/Attachments";
 import type { WeaponsByCategory } from "../../types/Weapons";
 import { useSession } from "next-auth/react";
+import type { BuildGetOneResult } from "../../types/Builds";
+import { useRouter } from "next/router";
+import Spinner from "../ui/Spinner";
 
-const BuildForm = () => {
+type FormErrors = {
+  [key: string]: string[];
+};
+
+type BuildFormProps = {
+  existingBuild?: BuildGetOneResult;
+  setShowBuildForm?: Dispatch<SetStateAction<boolean>>;
+};
+
+const BuildForm = (props: BuildFormProps) => {
+  const { existingBuild, setShowBuildForm } = props;
+
   const { data: session } = useSession();
+
+  const router = useRouter();
   const utils = trpc.useContext();
+
+  // Queries and mutations
   const { data: weaponsByCategory, isLoading: isLoadingWeapons } =
     trpc.weapon.getAllByCategory.useQuery();
+
   const { data: attachmentsByCategory, isLoading: isLoadingAttachments } =
     trpc.attachment.getAllByCategory.useQuery();
 
-  console.log("Weapons by Category", weaponsByCategory);
+  const postBuild = trpc.build.post.useMutation({
+    onSettled: () => {
+      utils.build.getAll.invalidate();
+      setTitle("");
+      setDescription("");
+      setWeapon(null);
+      setSelectedAttachments([]);
+    },
+  });
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [weapon, setWeapon] = useState<Weapon | Attachment>();
-  const [selectedAttachments, setSelectedAttachments] = useState<Attachment[]>(
-    []
+  const updateBuild = trpc.build.update.useMutation({
+    onSuccess: () => {
+      utils.build.getOne.invalidate({ id: existingBuild?.id as string });
+      if (setShowBuildForm) setShowBuildForm(false);
+    },
+  });
+
+  const deleteBuild = trpc.build.delete.useMutation({
+    onSuccess: () => {
+      router.push("/builds");
+    },
+  });
+
+  // States
+  const [title, setTitle] = useState(existingBuild?.title || "");
+  const [description, setDescription] = useState(
+    existingBuild?.description || ""
   );
-  const [numOfAttachments, setNumOfAttachments] = useState(1);
-
-  type FormErrors = {
-    [key: string]: string[];
-  };
+  const [weapon, setWeapon] = useState<Weapon | null>(
+    existingBuild?.weapon || null
+  );
+  const [selectedAttachments, setSelectedAttachments] = useState<Attachment[]>(
+    existingBuild?.attachments || []
+  );
+  const [numOfAttachments, setNumOfAttachments] = useState(
+    existingBuild?.attachments.length || 1
+  );
 
   const [errors, setErrors] = useState<FormErrors>({
     title: [],
@@ -39,6 +82,13 @@ const BuildForm = () => {
     weaponId: [],
     attachmentIds: [],
   });
+
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+
+  // Functions
+  const handleWeaponChange = (weapon: Weapon | Attachment | null) => {
+    setWeapon(weapon as Weapon);
+  };
 
   const addAttachment = () => {
     if (numOfAttachments >= 5) return;
@@ -52,15 +102,28 @@ const BuildForm = () => {
     setNumOfAttachments((current) => current - 1);
   };
 
-  const postBuild = trpc.build.postBuild.useMutation({
-    onSettled: () => {
-      utils.build.getAll.invalidate();
-      setTitle("");
-      setDescription("");
-      setWeapon(undefined);
-      setSelectedAttachments([]);
-    },
-  });
+  const clickDeleteBuild = () => {
+    setShowDeleteAlert(true);
+  };
+
+  const clickDeleteCancel = () => {
+    setShowDeleteAlert(false);
+  };
+
+  const clickDeleteBuildFinal = () => {
+    if (!existingBuild) return;
+    deleteBuild.mutate({
+      id: existingBuild.id,
+    });
+  };
+
+  const cancelBuildEdit = () => {
+    if (setShowBuildForm) setShowBuildForm(false);
+    setTitle(existingBuild?.title || "");
+    setDescription(existingBuild?.description || "");
+    setWeapon(existingBuild?.weapon || null);
+    setSelectedAttachments(existingBuild?.attachments || []);
+  };
 
   const submitBuild = () => {
     setErrors({});
@@ -110,12 +173,24 @@ const BuildForm = () => {
       return;
     }
 
+    if (existingBuild) {
+      const updateData = {
+        id: existingBuild.id as string,
+        title,
+        description,
+        weaponId: weapon?.id as number,
+        attachmentIds: selectedAttachments.map((attachment) => attachment.id),
+      };
+      updateBuild.mutate(updateData);
+      return;
+    }
+
     postBuild.mutate(formData);
   };
 
   return (
     <div>
-      <Heading>Submit a build</Heading>
+      <Heading>{existingBuild ? "Edit Your Build" : "Submit A Build"}</Heading>
       <div className="flex flex-col gap-4">
         <div>
           <label>Title</label>
@@ -154,7 +229,7 @@ const BuildForm = () => {
             <label>Select a weapon</label>
             <GroupedDropdown
               selectedItem={weapon}
-              setSelectedItem={setWeapon}
+              setSelectedItem={handleWeaponChange}
               data={weaponsByCategory as WeaponsByCategory}
             />
             {errors.weaponId &&
@@ -171,51 +246,89 @@ const BuildForm = () => {
           <div>
             <label>Select your attachments</label>
             <Panel>
-              <div className="px-4">
-                {Array.from(Array(numOfAttachments).keys()).map(
-                  (attachmentNum, index) => {
-                    return (
-                      <div key={`attachment-${attachmentNum}`}>
-                        <div className="mb-4 flex items-center gap-2">
-                          <AttachmentDropdown
-                            data={
-                              attachmentsByCategory as AttachmentsByCategory
-                            }
-                            index={index}
-                            selectedAttachments={selectedAttachments}
-                            setSelectedAttachments={setSelectedAttachments}
-                          />
-                          <div
-                            className="mb-2 cursor-pointer p-2 text-center text-white"
-                            onClick={() => removeAttachment(index)}
-                          >
-                            &times;
+              <Panel.Column>
+                <div>
+                  {Array.from(Array(numOfAttachments).keys()).map(
+                    (attachmentNum, index) => {
+                      return (
+                        <div key={`attachment-${attachmentNum}`}>
+                          <div className="mb-4 flex items-center gap-2">
+                            <AttachmentDropdown
+                              data={
+                                attachmentsByCategory as AttachmentsByCategory
+                              }
+                              index={index}
+                              selectedAttachments={selectedAttachments}
+                              setSelectedAttachments={setSelectedAttachments}
+                            />
+                            <div
+                              className="mb-2 cursor-pointer p-2 text-center text-white"
+                              onClick={() => removeAttachment(index)}
+                            >
+                              &times;
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  }
-                )}
-                {numOfAttachments < 5 && (
-                  <button className="tertiary w-full" onClick={addAttachment}>
-                    Add attachment
-                  </button>
-                )}
-                {errors.attachmentIds &&
-                  errors.attachmentIds.map((error, index) => (
-                    <Alert
-                      key={`attachments-error-${index}`}
-                      status="error"
-                      message={error}
-                    />
-                  ))}
-              </div>
+                      );
+                    }
+                  )}
+                  {numOfAttachments < 5 && (
+                    <button className="tertiary w-full" onClick={addAttachment}>
+                      Add attachment
+                    </button>
+                  )}
+                  {errors.attachmentIds &&
+                    errors.attachmentIds.map((error, index) => (
+                      <Alert
+                        key={`attachments-error-${index}`}
+                        status="error"
+                        message={error}
+                      />
+                    ))}
+                </div>
+              </Panel.Column>
             </Panel>
           </div>
         )}
-        <button className="w-full" onClick={submitBuild}>
-          Submit Build
-        </button>
+        <div>
+          {isLoadingWeapons ||
+          isLoadingAttachments ||
+          postBuild.isLoading ||
+          updateBuild.isLoading ||
+          deleteBuild.isLoading ? (
+            <Spinner />
+          ) : !showDeleteAlert ? (
+            <>
+              <button className="w-full" onClick={submitBuild}>
+                {existingBuild ? "Save Build" : "Submit Build"}
+              </button>
+              {existingBuild && (
+                <>
+                  <button
+                    className="secondary w-full"
+                    onClick={clickDeleteBuild}
+                  >
+                    Delete Build
+                  </button>
+                  <button className="tertiary w-full" onClick={cancelBuildEdit}>
+                    Cancel
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <Alert
+                status="error"
+                message="Are you sure you want to delete this build? This process is not reversable."
+              />
+              <button onClick={clickDeleteBuildFinal}>Delete Build</button>
+              <button className="secondary" onClick={clickDeleteCancel}>
+                Cancel
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -234,9 +347,9 @@ const AttachmentDropdown = ({
   setSelectedAttachments,
   index,
 }: AttachmentDropdownProps) => {
-  const changeAttachment = (selectedItem: Weapon | Attachment | undefined) => {
+  const handleAttachmentChange = (selectedItem: Weapon | Attachment | null) => {
     setSelectedAttachments((current) => {
-      const newAttachments: Attachment[] = [...current];
+      const newAttachments = [...current];
       newAttachments[index] = selectedItem as Attachment;
       return newAttachments;
     });
@@ -244,9 +357,10 @@ const AttachmentDropdown = ({
 
   return (
     <GroupedDropdown
+      key={`attachment-dropdown-${index}`}
       data={data}
-      selectedItem={selectedAttachments[index]}
-      setSelectedItem={changeAttachment}
+      selectedItem={selectedAttachments[index] || null}
+      setSelectedItem={handleAttachmentChange}
       selectedAttachments={selectedAttachments}
     />
   );

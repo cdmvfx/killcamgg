@@ -62,7 +62,7 @@ export const buildRouter = router({
 				console.log(error);
 			}
 		}),
-	postBuild: protectedProcedure
+	post: protectedProcedure
 		.input(
 			z.object({
 				userId: z.string(),
@@ -89,5 +89,47 @@ export const buildRouter = router({
 				console.log(error);
 			}
 		}),
+	update: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				title: z.string(),
+				description: z.string(),
+				weaponId: z.number(),
+				attachmentIds: z.array(z.number()),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				await ctx.prisma.build.update({
+					where: { id: input.id },
+					data: {
+						title: input.title,
+						description: input.description,
+						weaponId: input.weaponId,
+						attachments: {
+							set: input.attachmentIds.map((id) => ({ id })),
+						}
+					}
+				})
+			} catch (error) {
+				console.log(error);
+			}
+		}),
+	delete: protectedProcedure
+		.input(
+			z.object({
+				id: z.string()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				await ctx.prisma.build.delete({
+					where: { id: input.id }
+				})
+			} catch (error) {
+				console.log(error);
+			}
+		})
 
 });
