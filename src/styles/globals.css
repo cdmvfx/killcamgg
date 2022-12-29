@@ -53,7 +53,7 @@ button.secondary {
 }
 
 button.tertiary {
-  @apply border-none bg-transparent;
+  @apply border-0 bg-transparent transition-all hover:border-b-orange-600 hover:text-orange-600;
 }
 
 .panel button:last-of-type {

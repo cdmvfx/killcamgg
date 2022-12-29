@@ -1,5 +1,4 @@
 import { Html, Head, Main, NextScript } from "next/document";
-import { IoMdMenu } from "react-icons/io";
 
 export default function Document() {
   return (
@@ -11,20 +10,6 @@ export default function Document() {
         />
       </Head>
       <body>
-        <nav>
-          <div className="w-full bg-orange-600">
-            <div className="flex h-full items-center justify-between">
-              <div className="p-4">
-                <span className="font-jost text-2xl font-bold tracking-widest text-white">
-                  KILLCAM.GG
-                </span>
-              </div>
-              <div className="p-4 text-2xl">
-                <IoMdMenu />
-              </div>
-            </div>
-          </div>
-        </nav>
         <Main />
         <NextScript />
       </body>

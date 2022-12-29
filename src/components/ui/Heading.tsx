@@ -13,7 +13,10 @@ const Heading = ({ children, primaryAction }: HeadingProps) => {
     <h2 className="mb-2 flex items-center justify-between font-jost text-2xl">
       {children}
       {primaryAction && (
-        <button className="mb-0 w-fit text-sm" onClick={primaryAction.onClick}>
+        <button
+          className="tertiary mb-0 w-fit p-0 text-sm"
+          onClick={primaryAction.onClick}
+        >
           {primaryAction.label}
         </button>
       )}

@@ -1,5 +1,5 @@
 import { type NextPage } from "next";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import BuildsList from "../components/features/BuildList";
 import Heading from "../components/ui/Heading";
 import { trpc } from "../utils/trpc";
@@ -7,7 +7,7 @@ import SignInButton from "../components/ui/SignInButton";
 import { useRouter } from "next/router";
 
 const Home: NextPage = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   const { data: user } = trpc.user.getOne.useQuery({
     id: session?.user?.id ?? null,
@@ -22,7 +22,7 @@ const Home: NextPage = () => {
   return (
     <main className="flex w-full flex-col items-center px-4 pt-8">
       <div className="w-full">
-        {!session && (
+        {status !== "loading" && !session && (
           <div className="mb-4">
             <SignInButton platform="discord" />
             <SignInButton platform="twitch" />

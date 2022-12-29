@@ -14,7 +14,7 @@ const Panel = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
   );
 };
 
-const Column = ({ children }: { children: JSX.Element | string }) => {
+const Column = ({ children }: { children: React.ReactNode }) => {
   return <div className="panel-column px-4 lg:px-4">{children}</div>;
 };
 
