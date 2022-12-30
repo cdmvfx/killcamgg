@@ -7,10 +7,11 @@ type DrawerProps = {
   setOpen: (state: boolean) => void;
   title: string;
   children: React.ReactNode;
+  flipped?: boolean;
 };
 
 const Drawer = (props: DrawerProps) => {
-  const { open, setOpen, title, children } = props;
+  const { open, setOpen, title, children, flipped = true } = props;
 
   return (
     <Transition.Root show={open} as={Fragment}>
@@ -35,15 +36,19 @@ const Drawer = (props: DrawerProps) => {
 
         <div className="fixed inset-0 overflow-hidden">
           <div className="absolute inset-0 overflow-hidden">
-            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+            <div
+              className={`pointer-events-none fixed inset-y-0 flex max-w-full ${
+                flipped ? "left-0 pr-10" : "right-0 pl-10"
+              }`}
+            >
               <Transition.Child
                 as={Fragment}
                 enter="transform transition ease-in-out duration-500 sm:duration-700"
-                enterFrom="translate-x-full"
-                enterTo="translate-x-0"
+                enterFrom={flipped ? "-translate-x-full" : "translate-x-full"}
+                enterTo={flipped ? "translate-x-0" : "translate-x-0"}
                 leave="transform transition ease-in-out duration-500 sm:duration-700"
-                leaveFrom="translate-x-0"
-                leaveTo="translate-x-full"
+                leaveFrom={flipped ? "translate-x-0" : "translate-x-0"}
+                leaveTo={flipped ? "-translate-x-full" : "translate-x-full"}
               >
                 <Dialog.Panel className="pointer-events-auto relative w-screen max-w-md">
                   <Transition.Child
@@ -55,7 +60,13 @@ const Drawer = (props: DrawerProps) => {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                   >
-                    <div className="absolute top-0 left-0 -ml-8 flex pt-4 pr-2 sm:-ml-10 sm:pr-4">
+                    <div
+                      className={`absolute top-0 flex pt-4 pr-2 sm:-ml-10 sm:pr-4 ${
+                        flipped
+                          ? "right-0 -mr-8 pl-2 sm:-mr-10 sm:pl-4"
+                          : "left-0 -ml-8 pr-2 sm:-ml-10 sm:pr-4"
+                      }`}
+                    >
                       <button
                         type="button"
                         className="tertiary m-0 rounded-md p-0 text-white hover:text-white focus:outline-none focus:ring-2 focus:ring-white"

@@ -29,31 +29,37 @@ const Navbar = () => {
   ];
 
   return (
-    <div>
-      <div className="w-full bg-orange-600">
+    <nav>
+      <div className="w-full bg-neutral-900">
         <div className="flex w-full justify-between">
           <div className="flex h-full items-center">
             <div
-              className="cursor-pointer p-4 text-2xl"
+              className="cursor-pointer p-4 text-2xl transition-all hover:text-orange-600"
               onClick={() => setIsDrawerOpen(true)}
             >
               <IoMdMenu />
             </div>
-            <Link href={"/"}>
-              <div className="font-jost text-2xl font-bold tracking-widest text-white">
-                KILLCAM.GG
+            <Link href={"/"} className="group ">
+              <div className="hover font-jost text-2xl font-bold tracking-widest transition-all group-hover:text-orange-600">
+                KILLCAM
+                <span className="text-orange-600 transition-all group-hover:text-white">
+                  .GG
+                </span>
               </div>
             </Link>
           </div>
           <div className="flex items-center text-2xl">
             {session?.user && (
               <Link href={`/${session.user.name}`}>
-                <div className="p-4">
+                <div className="cursor-pointer p-4 transition-all hover:text-orange-600">
                   <IoMdPerson />
                 </div>
               </Link>
             )}
-            <div className="pr-4">
+            <div
+              onClick={() => alert("coming soon bitch")}
+              className="cursor-pointer pr-4 transition-all hover:text-orange-600"
+            >
               <IoMdSearch />
             </div>
           </div>
@@ -66,13 +72,13 @@ const Navbar = () => {
             key={`nav-item-${index}`}
             onClick={() => setIsDrawerOpen(false)}
           >
-            <div className="rounded-md p-4 transition-all hover:bg-neutral-900 hover:text-orange-400">
+            <div className="rounded-md p-4 transition-all hover:bg-neutral-900 hover:text-orange-600">
               {item.name}
             </div>
           </Link>
         ))}
       </Drawer>
-    </div>
+    </nav>
   );
 };
 

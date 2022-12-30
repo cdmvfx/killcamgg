@@ -8,6 +8,7 @@ import Panel from "../ui/Panel";
 
 type BuildListProps = {
   userFavorites?: string[] | null;
+  selectedWeapons?: Weapon[];
 };
 
 const BuildsList = (props: BuildListProps) => {
@@ -19,9 +20,18 @@ const BuildsList = (props: BuildListProps) => {
     return <Spinner />;
   }
 
+  const filteredBuilds = builds.filter((build) => {
+    if (props.selectedWeapons && props.selectedWeapons.length > 0) {
+      return props.selectedWeapons.find(
+        (weapon) => weapon.id === build.weaponId
+      );
+    }
+    return true;
+  });
+
   return (
     <div className="flex w-full flex-col">
-      {builds.map((build, index) => {
+      {filteredBuilds.map((build, index) => {
         return (
           <BuildCard
             build={build}
@@ -30,6 +40,13 @@ const BuildsList = (props: BuildListProps) => {
           />
         );
       })}
+      {filteredBuilds.length === 0 && (
+        <Panel>
+          <div className="text-center text-white">
+            No builds found with the current filters.
+          </div>
+        </Panel>
+      )}
     </div>
   );
 };
@@ -55,8 +72,8 @@ export const BuildCard = (props: BuildCardProps) => {
   const isFavorited = userFavorites?.includes(build.id) || false;
 
   return (
-    <Panel>
-      <Link href={`/builds/${build.id}`}>
+    <Link href={`/builds/${build.id}`}>
+      <Panel>
         <div className="flex">
           <div className="flex basis-4/12 flex-col items-center justify-center gap-2">
             <div className="flex text-4xl">
@@ -79,8 +96,8 @@ export const BuildCard = (props: BuildCardProps) => {
                 by <span className="text-orange-500">{build.author.name}</span>{" "}
                 -{" "}
                 {build.updatedAt === build.createdAt
-                  ? new Date(build.createdAt).toDateString()
-                  : new Date(build.updatedAt).toDateString()}
+                  ? new Date(build.createdAt).toLocaleDateString()
+                  : new Date(build.updatedAt).toLocaleDateString()}
               </div>
             </div>
             <div className="flex items-end justify-between">
@@ -102,8 +119,8 @@ export const BuildCard = (props: BuildCardProps) => {
             </div>
           </div>
         </div>
-      </Link>
-    </Panel>
+      </Panel>
+    </Link>
   );
 };
 

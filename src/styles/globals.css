@@ -7,7 +7,11 @@
 }
 
 body {
-  @apply min-h-screen bg-gradient-to-br from-[#2F3E46] to-[#52796F] text-neutral-100;
+  @apply min-h-screen  bg-neutral-900 text-neutral-100;
+}
+
+main {
+  @apply bg-gradient-to-br from-[#2F3E46] to-[#52796F];
 }
 
 h1 {
