@@ -246,47 +246,45 @@ const BuildForm = (props: BuildFormProps) => {
           <div>
             <label>Select your attachments</label>
             <Panel>
-              <Panel.Column>
-                <div>
-                  {Array.from(Array(numOfAttachments).keys()).map(
-                    (attachmentNum, index) => {
-                      return (
-                        <div key={`attachment-${attachmentNum}`}>
-                          <div className="mb-4 flex items-center gap-2">
-                            <AttachmentDropdown
-                              data={
-                                attachmentsByCategory as AttachmentsByCategory
-                              }
-                              index={index}
-                              selectedAttachments={selectedAttachments}
-                              setSelectedAttachments={setSelectedAttachments}
-                            />
-                            <div
-                              className="mb-2 cursor-pointer p-2 text-center text-white"
-                              onClick={() => removeAttachment(index)}
-                            >
-                              &times;
-                            </div>
+              <div>
+                {Array.from(Array(numOfAttachments).keys()).map(
+                  (attachmentNum, index) => {
+                    return (
+                      <div key={`attachment-${attachmentNum}`}>
+                        <div className="mb-4 flex items-center gap-2">
+                          <AttachmentDropdown
+                            data={
+                              attachmentsByCategory as AttachmentsByCategory
+                            }
+                            index={index}
+                            selectedAttachments={selectedAttachments}
+                            setSelectedAttachments={setSelectedAttachments}
+                          />
+                          <div
+                            className="mb-2 cursor-pointer p-2 text-center text-white"
+                            onClick={() => removeAttachment(index)}
+                          >
+                            &times;
                           </div>
                         </div>
-                      );
-                    }
-                  )}
-                  {numOfAttachments < 5 && (
-                    <button className="tertiary w-full" onClick={addAttachment}>
-                      Add attachment
-                    </button>
-                  )}
-                  {errors.attachmentIds &&
-                    errors.attachmentIds.map((error, index) => (
-                      <Alert
-                        key={`attachments-error-${index}`}
-                        status="error"
-                        message={error}
-                      />
-                    ))}
-                </div>
-              </Panel.Column>
+                      </div>
+                    );
+                  }
+                )}
+                {numOfAttachments < 5 && (
+                  <button className="tertiary w-full" onClick={addAttachment}>
+                    Add attachment
+                  </button>
+                )}
+                {errors.attachmentIds &&
+                  errors.attachmentIds.map((error, index) => (
+                    <Alert
+                      key={`attachments-error-${index}`}
+                      status="error"
+                      message={error}
+                    />
+                  ))}
+              </div>
             </Panel>
           </div>
         )}

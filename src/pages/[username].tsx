@@ -95,9 +95,7 @@ const ProfilePage: NextPage<PageProps> = (props) => {
           ))}
           {user.favorites.length === 0 && (
             <Panel>
-              <Panel.Column>
-                <div className="text-center">No favorites yet!</div>
-              </Panel.Column>
+              <div className="text-center">No favorites yet!</div>
             </Panel>
           )}
         </div>
@@ -112,9 +110,7 @@ const ProfilePage: NextPage<PageProps> = (props) => {
           ))}
           {user.reviews.length === 0 && (
             <Panel>
-              <Panel.Column>
-                <div className="text-center">No reviews yet!</div>
-              </Panel.Column>
+              <div className="text-center">No reviews yet!</div>
             </Panel>
           )}
         </div>

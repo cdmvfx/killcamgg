@@ -4,7 +4,6 @@ import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
 import Spinner from "../ui/Spinner";
 
 import type { Attachment, Build, Weapon } from "@prisma/client";
-import { useSession } from "next-auth/react";
 import Panel from "../ui/Panel";
 
 type BuildListProps = {
@@ -57,55 +56,53 @@ export const BuildCard = (props: BuildCardProps) => {
 
   return (
     <Panel>
-      <Panel.Column>
-        <Link href={`/builds/${build.id}`}>
-          <div className="flex">
-            <div className="flex basis-4/12 flex-col items-center justify-center gap-2">
-              <div className="flex text-4xl">
-                <span className="text-orange-500">
-                  <IoMdStar />
-                </span>
-                {build.averageRating.toFixed(1)}
+      <Link href={`/builds/${build.id}`}>
+        <div className="flex">
+          <div className="flex basis-4/12 flex-col items-center justify-center gap-2">
+            <div className="flex text-4xl">
+              <span className="text-orange-500">
+                <IoMdStar />
+              </span>
+              {build.averageRating.toFixed(1)}
+            </div>
+            <div className="text-center text-xs">
+              {build.totalReviews}{" "}
+              {build.totalReviews === 1 ? "Review" : "Reviews"}
+            </div>
+          </div>
+          <div className="basis-8/12">
+            <div className="p-2">
+              <div className="text-xl">
+                <p>{build.title}</p>
               </div>
-              <div className="text-center text-xs">
-                {build.totalReviews}{" "}
-                {build.totalReviews === 1 ? "Review" : "Reviews"}
+              <div className="text-xs">
+                by <span className="text-orange-500">{build.author.name}</span>{" "}
+                -{" "}
+                {build.updatedAt === build.createdAt
+                  ? new Date(build.createdAt).toDateString()
+                  : new Date(build.updatedAt).toDateString()}
               </div>
             </div>
-            <div className="basis-8/12">
+            <div className="flex items-end justify-between">
               <div className="p-2">
-                <div className="text-xl">
-                  <p>{build.title}</p>
-                </div>
-                <div className="text-xs">
-                  by{" "}
-                  <span className="text-orange-500">{build.author.name}</span> -{" "}
-                  {build.updatedAt === build.createdAt
-                    ? new Date(build.createdAt).toDateString()
-                    : new Date(build.updatedAt).toDateString()}
+                <div className="mb-2">{build.weapon.name}</div>
+                <div className="flex w-full flex-row gap-2 ">
+                  {build.attachments.map((attachment, index) => {
+                    return (
+                      <div key={index} className="text-sm">
+                        <div className="h-4 w-4 bg-orange-500"></div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-              <div className="flex items-end justify-between">
-                <div className="p-2">
-                  <div className="mb-2">{build.weapon.name}</div>
-                  <div className="flex w-full flex-row gap-2 ">
-                    {build.attachments.map((attachment, index) => {
-                      return (
-                        <div key={index} className="text-sm">
-                          <div className="h-4 w-4 bg-orange-500"></div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="p-2 text-2xl text-red-500">
-                  {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
-                </div>
+              <div className="p-2 text-2xl text-red-500">
+                {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
               </div>
             </div>
           </div>
-        </Link>
-      </Panel.Column>
+        </div>
+      </Link>
     </Panel>
   );
 };

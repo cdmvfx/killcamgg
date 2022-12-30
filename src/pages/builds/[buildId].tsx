@@ -233,36 +233,34 @@ const BuildInfo = ({ build }: Omit<PageProps, "user">) => {
     <section>
       <Heading>Build Information</Heading>
       <Panel>
-        <Panel.Column>
-          <div className="build-info">
-            {build.description && (
-              <div className="mb-4">
-                <label>Description</label>
-                <p>{build.description}</p>
-              </div>
-            )}
+        <div className="build-info">
+          {build.description && (
             <div className="mb-4">
-              <label>{build.weapon.category}</label>
-              <div>{build.weapon.name}</div>
+              <label>Description</label>
+              <p>{build.description}</p>
             </div>
-            <div>
-              <div className="flex flex-col justify-center gap-4">
-                {build.attachments.map((attachment, index) => {
-                  return (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="h-10 w-10 bg-orange-600"></div>
-                      <div className="flex flex-col">
-                        <label>{attachment.category}</label>
-                        <div>{attachment.name}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div>{build.weapon.unlock_req}</div>
+          )}
+          <div className="mb-4">
+            <label>{build.weapon.category}</label>
+            <div>{build.weapon.name}</div>
           </div>
-        </Panel.Column>
+          <div>
+            <div className="flex flex-col justify-center gap-4">
+              {build.attachments.map((attachment, index) => {
+                return (
+                  <div key={index} className="flex items-center gap-2">
+                    <div className="h-10 w-10 bg-orange-600"></div>
+                    <div className="flex flex-col">
+                      <label>{attachment.category}</label>
+                      <div>{attachment.name}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div>{build.weapon.unlock_req}</div>
+        </div>
       </Panel>
     </section>
   );
@@ -286,31 +284,25 @@ const BuildReviews = (props: PageProps & { existingReview?: Review }) => {
         )}
         {user && build.authorId !== user.id && showReviewForm && (
           <Panel>
-            <Panel.Column>
-              <ReviewForm
-                build={build}
-                setShowReviewForm={setShowReviewForm}
-                existingReview={existingReview}
-                user={user}
-              />
-            </Panel.Column>
+            <ReviewForm
+              build={build}
+              setShowReviewForm={setShowReviewForm}
+              existingReview={existingReview}
+              user={user}
+            />
           </Panel>
         )}
         {!build.reviews.length ? (
           <Panel>
-            <Panel.Column>
-              <div className="text-center">No reviews yet!</div>
-            </Panel.Column>
+            <div className="text-center">No reviews yet!</div>
           </Panel>
         ) : (
           <Panel>
-            <Panel.Column>
-              <ReviewList
-                build={build}
-                reviews={build.reviews}
-                setShowReviewForm={setShowReviewForm}
-              />
-            </Panel.Column>
+            <ReviewList
+              build={build}
+              reviews={build.reviews}
+              setShowReviewForm={setShowReviewForm}
+            />
           </Panel>
         )}
       </div>
