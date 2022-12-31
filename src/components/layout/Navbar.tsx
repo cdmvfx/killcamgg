@@ -18,6 +18,10 @@ const Navbar = () => {
       name: "Builds",
       href: "/builds",
     },
+    {
+      name: "Submit A Build",
+      href: "/submit",
+    },
     // {
     //   name: "Users",
     //   href: "/users",
@@ -31,10 +35,10 @@ const Navbar = () => {
   return (
     <nav>
       <div className="w-full bg-neutral-900">
-        <div className="flex w-full justify-between">
-          <div className="flex h-full items-center">
+        <div className="flex w-full items-center">
+          <div className="flex h-full flex-1 items-center p-4 md:flex-none">
             <div
-              className="cursor-pointer p-4 text-2xl transition-all hover:text-orange-600"
+              className="mr-4 cursor-pointer text-2xl transition-all hover:text-orange-600 md:hidden"
               onClick={() => setIsDrawerOpen(true)}
             >
               <IoMdMenu />
@@ -48,9 +52,26 @@ const Navbar = () => {
               </div>
             </Link>
           </div>
-          <div className="flex items-center text-2xl">
-            {session?.user && (
+          <div className="hidden md:flex md:flex-1">
+            {navItems.map((item, index) => (
+              <Link
+                href={item.href}
+                className="p-4 transition-all hover:text-orange-400"
+                key={`nav-desktop-item-${index}`}
+              >
+                <div className="font-jost">{item.name}</div>
+              </Link>
+            ))}
+          </div>
+          <div className="flex items-center justify-end text-2xl">
+            {session?.user ? (
               <Link href={`/${session.user.name}`}>
+                <div className="cursor-pointer p-4 transition-all hover:text-orange-600">
+                  <IoMdPerson />
+                </div>
+              </Link>
+            ) : (
+              <Link href={`/signin`}>
                 <div className="cursor-pointer p-4 transition-all hover:text-orange-600">
                   <IoMdPerson />
                 </div>
@@ -65,7 +86,12 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-      <Drawer open={isDrawerOpen} setOpen={setIsDrawerOpen} title="Navigation">
+      <Drawer
+        open={isDrawerOpen}
+        flipped
+        setOpen={setIsDrawerOpen}
+        title="Navigation"
+      >
         {navItems.map((item, index) => (
           <Link
             href={item.href}

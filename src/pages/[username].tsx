@@ -40,8 +40,8 @@ const ProfilePage: NextPage<PageProps> = (props) => {
   console.log("User data", user);
 
   return (
-    <main>
-      <section className="flex flex-col gap-2 bg-black bg-opacity-50 p-4">
+    <>
+      <section className="flex flex-col gap-2 bg-black bg-opacity-50 p-4 md:rounded-lg">
         <div className="flex items-center gap-4">
           <div>
             <Image
@@ -49,14 +49,13 @@ const ProfilePage: NextPage<PageProps> = (props) => {
               alt={`${user.name} profile picture.`}
               width={50}
               height={50}
+              className="rounded-full"
             />
           </div>
           <div className="flex flex-col">
-            <h1 className="mb-0">{user.name}&rsquo;s Profile</h1>
-            <div>
-              <span className="text-xs">
-                Member Since {new Date(user.createdAt).toDateString()}
-              </span>
+            <h1 className="mb-0">{user.name}</h1>
+            <div className="h-fit text-xs leading-tight">
+              Member Since {new Date(user.createdAt).toDateString()}
             </div>
           </div>
         </div>
@@ -115,7 +114,7 @@ const ProfilePage: NextPage<PageProps> = (props) => {
           )}
         </div>
       </section>
-    </main>
+    </>
   );
 };
 

@@ -104,56 +104,54 @@ const BuildPage: NextPage<PageProps> = (props) => {
   );
 
   return (
-    <main>
-      <div>
-        <div className="">
-          {build && (
-            <>
-              <section className="flex flex-col gap-2 bg-black bg-opacity-50 p-4">
-                <h1 className="mb-0">{build.title}</h1>
-                <div className="w-fit">
-                  <UserAvatar user={build.author} showAvatar={true} />
+    <div>
+      <div className="">
+        {build && (
+          <>
+            <section className="flex flex-col gap-2 bg-black bg-opacity-50 p-4 md:rounded-lg">
+              <h1 className="mb-0">{build.title}</h1>
+              <div className="w-fit">
+                <UserAvatar user={build.author} showAvatar={true} />
+              </div>
+              <div className="flex gap-8">
+                <div className="basis-1/2">
+                  <label>
+                    Created
+                    <br />
+                    {new Date(build.createdAt).toLocaleDateString()}
+                  </label>
+                  <div></div>
                 </div>
-                <div className="flex gap-8">
-                  <div className="basis-1/2">
-                    <label>
-                      Created
-                      <br />
-                      {new Date(build.createdAt).toLocaleDateString()}
-                    </label>
-                    <div></div>
-                  </div>
-                  <div className="basis-1/2">
-                    <label>
-                      Last Updated
-                      <br />
-                      {new Date(build.updatedAt).toLocaleDateString()}
-                    </label>
-                  </div>
+                <div className="basis-1/2">
+                  <label>
+                    Last Updated
+                    <br />
+                    {new Date(build.updatedAt).toLocaleDateString()}
+                  </label>
                 </div>
-              </section>
-              <section className="p-4">
-                <BuildRatingSummary
-                  user={user}
-                  build={build}
-                  isFavorited={isFavorited}
-                  changeFavorite={changeFavorite}
-                  averageRating={build.averageRating}
-                  showBuildForm={showBuildForm}
-                  setShowBuildForm={setShowBuildForm}
-                />
-                <BuildInfo build={build} />
-                <BuildReviews
-                  build={build}
-                  user={user}
-                  existingReview={existingReview}
-                />
-              </section>
-            </>
-          )}
-        </div>
+              </div>
+            </section>
+            <section className="p-4">
+              <BuildRatingSummary
+                user={user}
+                build={build}
+                isFavorited={isFavorited}
+                changeFavorite={changeFavorite}
+                averageRating={build.averageRating}
+                showBuildForm={showBuildForm}
+                setShowBuildForm={setShowBuildForm}
+              />
+              <BuildInfo build={build} />
+              <BuildReviews
+                build={build}
+                user={user}
+                existingReview={existingReview}
+              />
+            </section>
+          </>
+        )}
       </div>
-    </main>
+    </div>
   );
 };
 
@@ -198,14 +196,6 @@ const BuildRatingSummary = ({
         )}
       </div>
       <div className="">
-        {user && build.authorId !== user.id && (
-          <button className=" ">Review this build!</button>
-        )}
-        {user === null && (
-          <button className="">
-            <Link href={`/`}>Sign in to review this build!</Link>
-          </button>
-        )}
         {user &&
           build.authorId === user.id &&
           !showBuildForm &&
@@ -278,9 +268,9 @@ const BuildReviews = (props: PageProps & { existingReview?: Review }) => {
       <Heading>Reviews</Heading>
       <div className="flex flex-col">
         {!user && (
-          <button className="w-full">
-            <Link href={`/`}>Sign in to review this build!</Link>
-          </button>
+          <Link href="/signin">
+            <button className="w-full">Sign in to review this build!</button>
+          </Link>
         )}
         {user && build.authorId !== user.id && showReviewForm && (
           <Panel>

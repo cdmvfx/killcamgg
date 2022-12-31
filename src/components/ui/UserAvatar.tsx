@@ -9,18 +9,15 @@ type UserAvatarProps = {
 
 const UserAvatar = ({ user, showAvatar = false }: UserAvatarProps) => {
   return (
-    <div className="inline-block">
-      <Link
-        href={`/${user.name}`}
-        className="flex items-center border border-neutral-500"
-      >
+    <div className="inline-block hover:text-orange-600">
+      <Link href={`/${user.name}`} className="flex items-center">
         {showAvatar && (
           <Image
             src={user.image as string}
             alt={`${user.name} profile picture`}
             width={30}
             height={30}
-            className=""
+            className="rounded-full"
           />
         )}
         <div className="px-2">{user.name}</div>

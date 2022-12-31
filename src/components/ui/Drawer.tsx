@@ -11,7 +11,7 @@ type DrawerProps = {
 };
 
 const Drawer = (props: DrawerProps) => {
-  const { open, setOpen, title, children, flipped = true } = props;
+  const { open, setOpen, title, children, flipped = false } = props;
 
   return (
     <Transition.Root show={open} as={Fragment}>
