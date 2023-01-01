@@ -2,8 +2,8 @@ import { prisma } from "../server/db/client";
 import Image from "next/image";
 import Heading from "../components/ui/Heading";
 import { useSession } from "next-auth/react";
-import { BuildCard } from "../components/features/BuildList";
-import { ReviewCard } from "../components/features/Reviews";
+import { BuildGrid } from "../components/features/BuildList";
+import { ReviewGrid } from "../components/features/Reviews";
 import { trpc } from "../utils/trpc";
 
 import type {
@@ -37,11 +37,13 @@ const ProfilePage: NextPage<PageProps> = (props) => {
 
   const isCurrentUser = session && user.id === session.user?.id;
 
+  const userFavorites = user.favorites.map((favorite) => favorite.id);
+
   console.log("User data", user);
 
   return (
-    <>
-      <section className="flex flex-col gap-2 bg-black bg-opacity-50 p-4 md:rounded-lg">
+    <div className="flex flex-col gap-8 p-0 md:p-4">
+      <section className="flex flex-col justify-between gap-4 bg-black bg-opacity-50 p-4 md:flex-row md:rounded-lg">
         <div className="flex items-center gap-4">
           <div>
             <Image
@@ -74,39 +76,28 @@ const ProfilePage: NextPage<PageProps> = (props) => {
           </div>
         </div>
       </section>
-      <section className="p-4">
+      <section>
         <Heading>
           {isCurrentUser ? "Your Builds" : `${user.name}'s Builds`}
         </Heading>
         <div className="flex flex-col gap-4">
-          {user.builds.map((build, index) => (
-            <BuildCard key={`userbuild-${index}`} build={build} />
-          ))}
+          <BuildGrid builds={user.builds} userFavorites={userFavorites} />
         </div>
       </section>
-      <section className="p-4">
+      <section>
         <Heading>
           {isCurrentUser ? "Your Favorites" : `${user.name}'s Favorites`}
         </Heading>
         <div className="flex flex-col gap-4">
-          {user.favorites.map((build, index) => (
-            <BuildCard key={`favorite-${index}`} build={build} />
-          ))}
-          {user.favorites.length === 0 && (
-            <Panel>
-              <div className="text-center">No favorites yet!</div>
-            </Panel>
-          )}
+          <BuildGrid builds={user.favorites} userFavorites={userFavorites} />
         </div>
       </section>
-      <section className="p-4">
+      <section>
         <Heading>
           {isCurrentUser ? "Your Reviews" : `${user.name}'s Reviews`}
         </Heading>
         <div className="flex flex-col gap-4">
-          {user.reviews.map((review, index) => (
-            <ReviewCard key={`favorite-${index}`} review={review} />
-          ))}
+          <ReviewGrid reviews={user.reviews} />
           {user.reviews.length === 0 && (
             <Panel>
               <div className="text-center">No reviews yet!</div>
@@ -114,7 +105,7 @@ const ProfilePage: NextPage<PageProps> = (props) => {
           )}
         </div>
       </section>
-    </>
+    </div>
   );
 };
 

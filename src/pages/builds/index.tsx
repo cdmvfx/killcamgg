@@ -1,4 +1,4 @@
-import BuildsList from "../../components/features/BuildList";
+import FilteredBuildGrid from "../../components/features/BuildList";
 import { useState } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import type {
@@ -13,6 +13,7 @@ import type { WeaponsByCategory } from "../../types/Weapons";
 import type { AttachmentsByCategory } from "../../types/Attachments";
 import type { SortOption } from "../../types/Filters";
 import sortOptions from "../../lib/sortOptions";
+import { useSession } from "next-auth/react";
 
 const Builds = () => {
   const [selectedWeapons, setSelectedWeapons] = useState<Weapon[]>([]);
@@ -29,6 +30,14 @@ const Builds = () => {
 
   const { data: attachmentsByCategory, isLoading: isLoadingAttachments } =
     trpc.attachment.getAllByCategory.useQuery();
+
+  const { data: session } = useSession();
+
+  const { data: user } = trpc.user.getOne.useQuery({
+    id: session?.user?.id || null,
+  });
+
+  const userFavorites = user?.favorites.map((favorite) => favorite.id) || null;
 
   return (
     <div className="py-4">
@@ -51,7 +60,8 @@ const Builds = () => {
         ) : (
           <Spinner />
         )}
-        <BuildsList
+        <FilteredBuildGrid
+          userFavorites={userFavorites}
           selectedWeapons={selectedWeapons}
           selectedAttachments={selectedAttachments}
           sortBy={sortBy}

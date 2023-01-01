@@ -15,7 +15,7 @@ main {
 }
 
 #content {
-  @apply py-4 md:m-auto md:max-w-6xl md:py-10;
+  @apply md:m-auto md:max-w-6xl md:py-10;
 }
 
 #hero {
@@ -45,6 +45,10 @@ h3 {
   @apply text-xl font-bold;
 }
 
+ol {
+  @apply list-inside list-decimal;
+}
+
 label {
   @apply inline-block font-jost text-xs font-bold uppercase tracking-wider;
 }
@@ -57,7 +61,7 @@ input,
 textarea,
 select,
 .grouped-dropdown {
-  @apply block w-full rounded-md bg-black bg-opacity-30 px-4 py-2 placeholder-neutral-300;
+  @apply block w-full rounded-md bg-black bg-opacity-50 px-4 py-2 placeholder-neutral-300 transition-all;
 }
 
 input:focus,

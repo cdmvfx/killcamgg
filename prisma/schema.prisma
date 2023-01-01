@@ -157,7 +157,7 @@ model Review {
   author    User     @relation(fields: [authorId], references: [id])
   buildId   String
   build     Build    @relation(fields: [buildId], references: [id])
-  rating    Int
+  isLike    Boolean?
   content   String?
 
   @@unique([authorId, buildId])

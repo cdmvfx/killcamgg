@@ -1,9 +1,8 @@
 import { type NextPage } from "next";
 import { useSession } from "next-auth/react";
-import BuildsList from "../components/features/BuildList";
+import FilteredBuildGrid from "../components/features/BuildList";
 import Heading from "../components/ui/Heading";
 import { trpc } from "../utils/trpc";
-import SignInButton from "../components/ui/SignInButton";
 import { useRouter } from "next/router";
 import Link from "next/link";
 
@@ -21,7 +20,7 @@ const Home: NextPage = () => {
   const router = useRouter();
 
   return (
-    <div className="flex w-full flex-col items-center px-4">
+    <div className="flex w-full flex-col items-center py-4 px-4">
       <div className="w-full">
         <div id="hero" className="mb-8 rounded-lg px-8 py-8 md:py-20">
           <div className="flex flex-col md:flex-row">
@@ -63,7 +62,7 @@ const Home: NextPage = () => {
           >
             Top Rated Builds
           </Heading>
-          <BuildsList
+          <FilteredBuildGrid
             userFavorites={userFavorites}
             sortBy={{ name: "Rating (High to Low)", value: "rating-desc" }}
           />

@@ -1,6 +1,14 @@
-const Panel = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
+const Panel = ({
+  className,
+  children,
+}: {
+  className?: string;
+  children: JSX.Element | JSX.Element[];
+}) => {
   return (
-    <div className="panel mb-4 w-full rounded-md bg-black bg-opacity-50 p-4 lg:p-4">
+    <div
+      className={`panel h-full w-full rounded-md border border-transparent bg-black bg-opacity-50 p-4 transition-all lg:p-4 ${className}`}
+    >
       {children}
     </div>
   );

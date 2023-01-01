@@ -7,8 +7,14 @@ import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
 import { prisma } from "../../server/db/client";
 import { trpc } from "../../utils/trpc";
-import { useState } from "react";
+import React, { useState } from "react";
 import BuildForm from "../../components/features/BuildForm";
+import {
+  MdThumbDownOffAlt,
+  MdThumbUpOffAlt,
+  MdThumbDown,
+  MdThumbUp,
+} from "react-icons/md";
 
 import type {
   GetServerSidePropsContext,
@@ -17,6 +23,8 @@ import type {
 } from "next";
 import type { Review } from "@prisma/client";
 import type { Dispatch, SetStateAction } from "react";
+import Spinner from "../../components/ui/Spinner";
+import { Dialog, Transition } from "@headlessui/react";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
@@ -27,7 +35,7 @@ const BuildPage: NextPage<PageProps> = (props) => {
 
   const utils = trpc.useContext();
 
-  const { data: build } = trpc.build.getOne.useQuery(
+  const { data: build, refetch: refetchBuildData } = trpc.build.getOne.useQuery(
     { id: initialBuildData.id },
     {
       initialData: initialBuildData,
@@ -43,8 +51,6 @@ const BuildPage: NextPage<PageProps> = (props) => {
       initialData: initialUserData,
     }
   );
-
-  console.log("user", user);
 
   if (user === undefined) return <div>Loading user...</div>;
 
@@ -99,63 +105,85 @@ const BuildPage: NextPage<PageProps> = (props) => {
     ? user.favorites.some((favorite) => favorite.id === build.id)
     : false;
 
-  const existingReview = build.reviews.find(
-    (review) => review.authorId === user?.id
-  );
+  const { data: existingReview } = trpc.review.getOne.useQuery({
+    buildId: build.id,
+  });
+
+  const isLiked = existingReview ? existingReview.isLike : null;
 
   return (
     <div>
-      <div className="">
-        {build && (
-          <>
-            <section className="flex flex-col gap-2 bg-black bg-opacity-50 p-4 md:rounded-lg">
-              <h1 className="mb-0">{build.title}</h1>
-              <div className="w-fit">
-                <UserAvatar user={build.author} showAvatar={true} />
-              </div>
-              <div className="flex gap-8">
-                <div className="basis-1/2">
-                  <label>
-                    Created
-                    <br />
-                    {new Date(build.createdAt).toLocaleDateString()}
-                  </label>
-                  <div></div>
-                </div>
-                <div className="basis-1/2">
-                  <label>
-                    Last Updated
-                    <br />
-                    {new Date(build.updatedAt).toLocaleDateString()}
-                  </label>
-                </div>
-              </div>
-            </section>
-            <section className="p-4">
-              <BuildRatingSummary
-                user={user}
-                build={build}
-                isFavorited={isFavorited}
-                changeFavorite={changeFavorite}
-                averageRating={build.averageRating}
-                showBuildForm={showBuildForm}
-                setShowBuildForm={setShowBuildForm}
-              />
-              <BuildInfo build={build} />
-              <BuildReviews
-                build={build}
-                user={user}
-                existingReview={existingReview}
-              />
-            </section>
-          </>
-        )}
-      </div>
+      {build && (
+        <div className="flex flex-col gap-4 md:gap-8 md:p-4">
+          <BuildHeader
+            user={user}
+            build={build}
+            isFavorited={isFavorited}
+            changeFavorite={changeFavorite}
+            averageRating={build.averageRating}
+            showBuildForm={showBuildForm}
+            setShowBuildForm={setShowBuildForm}
+            isLiked={isLiked}
+            refetchBuildData={refetchBuildData}
+          />
+
+          <BuildInfo build={build} />
+          {existingReview === undefined ? (
+            <Spinner />
+          ) : (
+            <BuildReviews
+              build={build}
+              user={user}
+              existingReview={existingReview}
+            />
+          )}
+        </div>
+      )}
+      <Transition appear show={showBuildForm} as={React.Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setShowBuildForm(false)}
+        >
+          <Transition.Child
+            as={React.Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-50" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full md:p-4">
+              <Transition.Child
+                as={React.Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="min-h-full w-full max-w-lg transform overflow-hidden bg-[#274b48] p-4 text-left align-middle shadow-xl transition-all md:rounded-2xl">
+                  <BuildForm
+                    existingBuild={build}
+                    setShowBuildForm={setShowBuildForm}
+                  />
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   );
 };
 
-const BuildRatingSummary = ({
+const BuildHeader = ({
   user,
   build,
   isFavorited,
@@ -163,56 +191,167 @@ const BuildRatingSummary = ({
   averageRating,
   showBuildForm,
   setShowBuildForm,
+  isLiked,
 }: PageProps & {
   isFavorited: boolean;
   changeFavorite: () => void;
   averageRating: number;
-  showBuildForm?: boolean;
-  setShowBuildForm?: Dispatch<SetStateAction<boolean>>;
+  showBuildForm: boolean;
+  setShowBuildForm: Dispatch<SetStateAction<boolean>>;
+  isLiked: boolean | null;
+  refetchBuildData: () => void;
 }) => {
+  const utils = trpc.useContext();
+
+  const { mutate: toggleLikeMutation } = trpc.review.changeLike.useMutation({
+    onMutate: async (input) => {
+      await utils.review.getOne.cancel();
+      const previousReview = utils.review.getOne.getData({
+        buildId: input.buildId,
+      });
+      utils.review.getOne.setData({ buildId: input.buildId }, (oldReview) => {
+        if (!oldReview) return null;
+        return {
+          ...oldReview,
+          isLike: input.isLike,
+        };
+      });
+      return { previousReview };
+    },
+    onSettled: async () => {
+      console.log("settled. invalidating review.");
+      utils.review.getOne.invalidate({ buildId: build.id });
+      utils.build.getOne.invalidate({ id: build.id });
+    },
+    onError: async (err, input, context) => {
+      console.log("Error changing like.", err);
+      utils.review.getOne.setData(
+        { buildId: input.buildId },
+        context?.previousReview
+      );
+    },
+  });
+
+  const handleToggleLike = (status: boolean) => {
+    console.log("isLike", isLiked, "status", status);
+    if (
+      (isLiked === true && status === true) ||
+      (isLiked === false && status === false)
+    ) {
+      console.log("here");
+      toggleLikeMutation({
+        buildId: build.id,
+        isLike: null,
+      });
+      return;
+    }
+    toggleLikeMutation({
+      buildId: build.id,
+      isLike: status,
+    });
+  };
+
   return (
-    <section className="mb-4">
-      <div className="mb-4 flex items-center justify-between ">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center text-4xl">
-            <span className="text-orange-500">
-              <IoMdStar />
-            </span>{" "}
-            {averageRating.toFixed(1) || "0.0"}
+    <section className="flex flex-col justify-between bg-black bg-opacity-50 md:flex-row md:rounded-lg">
+      <div className="flex flex-col justify-center gap-4 p-4 md:basis-1/2 md:p-8">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-4">
+            <h1 className="mb-0">{build.title}</h1>
+            <div className="w-fit">
+              <UserAvatar user={build.author} showAvatar={true} />
+            </div>
+            <div className="flex flex-grow flex-col gap-4 ">
+              <div className="flex gap-8">
+                <div className="">
+                  <label>
+                    Created
+                    <br />
+                    {new Date(build.createdAt).toLocaleDateString()}
+                  </label>
+                </div>
+                <div className="">
+                  <label>
+                    Last Updated
+                    <br />
+                    {new Date(build.updatedAt).toLocaleDateString()}
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="flex w-full items-center gap-4">
+              {user && build.authorId === user.id ? (
+                ""
+              ) : (
+                <>
+                  <div className="flex-grow">
+                    <div className="flex cursor-pointer text-4xl text-orange-400">
+                      <div
+                        className="p-2 text-emerald-500"
+                        onClick={() => handleToggleLike(true)}
+                      >
+                        {isLiked === true ? <MdThumbUp /> : <MdThumbUpOffAlt />}
+                      </div>
+                      <div
+                        className="p-2 text-red-500"
+                        onClick={() => handleToggleLike(false)}
+                      >
+                        {isLiked === false ? (
+                          <MdThumbDown />
+                        ) : (
+                          <MdThumbDownOffAlt />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="cursor-pointer text-4xl text-red-500"
+                    onClick={changeFavorite}
+                  >
+                    {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
+                  </div>
+                </>
+              )}
+            </div>
+            {user && user.id === build.authorId && (
+              <button
+                className="hidden w-full md:block md:w-48"
+                onClick={() => setShowBuildForm(true)}
+              >
+                Edit Build
+              </button>
+            )}
           </div>
-          <div className="">
-            <div>{build.reviews.length} Reviews</div>
+          <div className="text-center">
+            <div className="flex items-center text-4xl lg:text-6xl">
+              <span className="text-orange-500">
+                <IoMdStar />
+              </span>{" "}
+              {averageRating.toFixed(1) || "0.0"}
+            </div>
+            <div className="text-md lg:text-xl">
+              {build.reviews.length + " "}
+              {build.reviews.length === 1 ? "vote" : "votes"}
+            </div>
           </div>
         </div>
-        {user && build.authorId === user.id ? (
-          ""
-        ) : (
-          <div
-            className="cursor-pointer text-4xl text-red-500"
-            onClick={changeFavorite}
+        {user && user.id === build.authorId && (
+          <button
+            className="w-full md:hidden md:w-48"
+            onClick={() => setShowBuildForm(true)}
           >
-            {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
-          </div>
+            Edit Build
+          </button>
         )}
       </div>
-      <div className="">
-        {user &&
-          build.authorId === user.id &&
-          !showBuildForm &&
-          setShowBuildForm && (
-            <button
-              className="mb-0 w-full "
-              onClick={() => setShowBuildForm(true)}
-            >
-              Edit Build
-            </button>
-          )}
-        {user && build.authorId === user.id && showBuildForm && (
-          <BuildForm
-            existingBuild={build}
-            setShowBuildForm={setShowBuildForm}
-          />
-        )}
+      <div className="hidden md:flex">
+        <img
+          className=""
+          style={{
+            clipPath: "polygon(10% 0, 100% 0, 100% 100%, 0 100%)",
+            borderRadius: "0 10px 10px 0",
+          }}
+          src="https://www.theloadout.com/wp-content/sites/theloadout/2022/09/call-of-duty-modern-warfare-2-ftac-recon-battle-rifle-loadout-1-550x309.jpg"
+        />
       </div>
     </section>
   );
@@ -220,9 +359,9 @@ const BuildRatingSummary = ({
 
 const BuildInfo = ({ build }: Omit<PageProps, "user">) => {
   return (
-    <section>
+    <section className="p-4 md:p-0">
       <Heading>Build Information</Heading>
-      <Panel>
+      <Panel className="p-8">
         <div className="build-info">
           {build.description && (
             <div className="mb-4">
@@ -256,17 +395,19 @@ const BuildInfo = ({ build }: Omit<PageProps, "user">) => {
   );
 };
 
-const BuildReviews = (props: PageProps & { existingReview?: Review }) => {
+const BuildReviews = (props: PageProps & { existingReview: Review | null }) => {
   const { build, user, existingReview } = props;
 
   const [showReviewForm, setShowReviewForm] = useState(
     existingReview ? false : true
   );
 
+  console.log("Build Reviews Existing", existingReview, showReviewForm);
+
   return (
-    <section>
+    <section className="p-4 md:p-0">
       <Heading>Reviews</Heading>
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-4">
         {!user && (
           <Link href="/signin">
             <button className="w-full">Sign in to review this build!</button>

@@ -7,14 +7,14 @@ import type { Attachment, Build, Weapon } from "@prisma/client";
 import Panel from "../ui/Panel";
 import type { SortOption } from "../../types/Filters";
 
-type BuildListProps = {
-  userFavorites?: string[] | null;
+type FilteredBuildGridProps = {
+  userFavorites: string[] | null;
   selectedWeapons?: Weapon[];
   selectedAttachments?: Attachment[];
   sortBy: SortOption;
 };
 
-const BuildsList = (props: BuildListProps) => {
+const FilteredBuildGrid = (props: FilteredBuildGridProps) => {
   const { userFavorites, selectedWeapons, selectedAttachments, sortBy } = props;
 
   const { data: builds, isLoading } = trpc.build.getAll.useQuery();
@@ -60,9 +60,29 @@ const BuildsList = (props: BuildListProps) => {
     }
   });
 
+  return <BuildGrid builds={sortedBuilds} userFavorites={userFavorites} />;
+};
+
+type BuildGridProps = {
+  builds: (Build & {
+    weapon: Weapon;
+    author: {
+      id: string;
+      name: string | null;
+      image: string | null;
+    };
+    attachments: Attachment[];
+  })[];
+  userFavorites: string[] | null;
+  emptyMessage?: string;
+};
+
+export const BuildGrid = (props: BuildGridProps) => {
+  const { builds, userFavorites, emptyMessage = "No builds found." } = props;
+
   return (
-    <div className="flex w-full flex-col md:grid md:grid-cols-2 md:gap-4 lg:grid-cols-3">
-      {sortedBuilds.map((build, index) => {
+    <div className="flex w-full flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3">
+      {builds.map((build, index) => {
         return (
           <BuildCard
             build={build}
@@ -71,11 +91,9 @@ const BuildsList = (props: BuildListProps) => {
           />
         );
       })}
-      {sortedBuilds.length === 0 && (
+      {builds.length === 0 && (
         <Panel>
-          <div className="text-center text-white">
-            No builds found with the current filters.
-          </div>
+          <div className="text-center text-white">{emptyMessage}</div>
         </Panel>
       )}
     </div>
@@ -103,7 +121,10 @@ export const BuildCard = (props: BuildCardProps) => {
   const isFavorited = userFavorites?.includes(build.id) || false;
 
   return (
-    <Link href={`/builds/${build.id}`} className="md:basis-1/2">
+    <Link
+      href={`/builds/${build.id}`}
+      className="rounded-md border border-transparent transition-all hover:border-orange-600 hover:shadow-lg md:basis-1/2"
+    >
       <Panel>
         <div className="flex gap-4">
           <div className="flex basis-4/12 flex-col items-center justify-center gap-2">
@@ -120,8 +141,12 @@ export const BuildCard = (props: BuildCardProps) => {
           </div>
           <div className="basis-8/12">
             <div className="p-2">
-              <div className="text-xl">
-                <p>{build.title}</p>
+              <div className="text-lg">
+                <p>
+                  {build.title.length > 20
+                    ? build.title.substring(0, 20) + "..."
+                    : build.title}
+                </p>
               </div>
               <div className="text-xs">
                 by <span className="text-orange-500">{build.author.name}</span>{" "}
@@ -155,4 +180,4 @@ export const BuildCard = (props: BuildCardProps) => {
   );
 };
 
-export default BuildsList;
+export default FilteredBuildGrid;
