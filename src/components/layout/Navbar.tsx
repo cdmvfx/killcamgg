@@ -4,7 +4,6 @@ import Drawer from "../ui/Drawer";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { trpc } from "../../utils/trpc";
 
 const Navbar = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -12,10 +11,6 @@ const Navbar = () => {
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false);
 
   const { data: session } = useSession();
-
-  const { data: user } = trpc.user.getOne.useQuery({
-    id: session?.user?.id || null,
-  });
 
   const navItems = [
     {
@@ -47,8 +42,8 @@ const Navbar = () => {
     },
   ];
 
-  const isAuthorized: boolean = user
-    ? user.role === "MODERATOR" || user.role === "ADMIN"
+  const isAuthorized: boolean = session?.user
+    ? session?.user.role === "MODERATOR" || session?.user.role === "ADMIN"
     : false;
 
   return (

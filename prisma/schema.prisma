@@ -55,7 +55,7 @@ model User {
   emailVerified DateTime?
   image         String?
   isVerified    Boolean       @default(false)
-  role          Role          @default(USER)
+  role          Role?         @default(USER)
   rank          Rank          @default(SCRUB)
   accounts      Account[]
   sessions      Session[]

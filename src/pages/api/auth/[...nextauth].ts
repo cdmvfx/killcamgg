@@ -10,10 +10,13 @@ import { prisma } from "../../../server/db/client";
 export const authOptions: NextAuthOptions = {
 	// Include user.id on session
 	callbacks: {
-		session({ session, user }) {
+		session: ({ session, user }) => {
+
 			if (session.user) {
 				session.user.id = user.id;
+				session.user.role = user.role;
 			}
+
 			return session;
 		},
 	},
@@ -22,11 +25,11 @@ export const authOptions: NextAuthOptions = {
 	providers: [
 		DiscordProvider({
 			clientId: env.DISCORD_CLIENT_ID,
-			clientSecret: env.DISCORD_CLIENT_SECRET,
+			clientSecret: env.DISCORD_CLIENT_SECRET
 		}),
 		TwitchProvider({
 			clientId: env.TWITCH_CLIENT_ID,
-			clientSecret: env.TWITCH_CLIENT_SECRET,
+			clientSecret: env.TWITCH_CLIENT_SECRET
 		}),
 		// ...add more providers here
 	]
