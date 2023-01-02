@@ -5,9 +5,16 @@ export const buildRouter = router({
 	getAll: publicProcedure.query(async ({ ctx }) => {
 		try {
 			return await ctx.prisma.build.findMany({
+				where: {
+					isApproved: true
+				},
 				include: {
 					weapon: true,
-					attachments: true,
+					attachmentSetups: {
+						include: {
+							attachment: true
+						}
+					},
 					author: {
 						select: {
 							id: true,
@@ -35,7 +42,11 @@ export const buildRouter = router({
 					where: { id: input.id },
 					include: {
 						weapon: true,
-						attachments: true,
+						attachmentSetups: {
+							include: {
+								attachment: true
+							}
+						},
 						author: {
 							select: {
 								id: true,
@@ -65,23 +76,27 @@ export const buildRouter = router({
 	post: protectedProcedure
 		.input(
 			z.object({
-				userId: z.string(),
 				title: z.string(),
 				description: z.string(),
 				weaponId: z.number(),
-				attachmentIds: z.array(z.number()),
+				attachmentSetups: z.array(z.object({
+					attachmentId: z.number(),
+					horizontal: z.string(),
+					vertical: z.string()
+				})),
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+
 			try {
 				await ctx.prisma.build.create({
 					data: {
-						authorId: input.userId,
+						authorId: ctx.session.user.id,
 						title: input.title,
 						description: input.description,
 						weaponId: input.weaponId,
-						attachments: {
-							connect: input.attachmentIds.map((id) => ({ id })),
+						attachmentSetups: {
+							create: input.attachmentSetups
 						}
 					}
 				})
@@ -96,19 +111,29 @@ export const buildRouter = router({
 				title: z.string(),
 				description: z.string(),
 				weaponId: z.number(),
-				attachmentIds: z.array(z.number()),
+				attachmentSetups: z.array(z.object({
+					attachmentId: z.number(),
+					horizontal: z.string(),
+					vertical: z.string()
+				})),
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			try {
+				await ctx.prisma.attachmentSetup.deleteMany({
+					where: {
+						buildId: input.id
+					}
+				})
+
 				await ctx.prisma.build.update({
 					where: { id: input.id },
 					data: {
 						title: input.title,
 						description: input.description,
 						weaponId: input.weaponId,
-						attachments: {
-							set: input.attachmentIds.map((id) => ({ id })),
+						attachmentSetups: {
+							create: input.attachmentSetups
 						}
 					}
 				})
@@ -124,6 +149,12 @@ export const buildRouter = router({
 		)
 		.mutation(async ({ ctx, input }) => {
 			try {
+				await ctx.prisma.attachmentSetup.deleteMany({
+					where: {
+						buildId: input.id
+					}
+				})
+
 				await ctx.prisma.build.delete({
 					where: { id: input.id }
 				})

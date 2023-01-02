@@ -79,7 +79,7 @@ const Drawer = (props: DrawerProps) => {
                   </Transition.Child>
                   <div className="flex h-full flex-col overflow-hidden bg-neutral-800 py-6 shadow-xl">
                     <div className="px-4 sm:px-6">
-                      <Dialog.Title className="text-xl font-medium">
+                      <Dialog.Title className="font-jost text-2xl font-medium">
                         {title}
                       </Dialog.Title>
                     </div>

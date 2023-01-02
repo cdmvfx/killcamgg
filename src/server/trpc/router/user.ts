@@ -27,7 +27,11 @@ export const userRouter = router({
 									},
 								},
 								weapon: true,
-								attachments: true,
+								attachmentSetups: {
+									include: {
+										attachment: true,
+									}
+								},
 							},
 						},
 						reviews: {
@@ -45,7 +49,11 @@ export const userRouter = router({
 									},
 								},
 								weapon: true,
-								attachments: true,
+								attachmentSetups: {
+									include: {
+										attachment: true,
+									}
+								},
 							},
 						},
 					},

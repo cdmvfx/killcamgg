@@ -3,9 +3,10 @@ import { trpc } from "../../utils/trpc";
 import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
 import Spinner from "../ui/Spinner";
 
-import type { Attachment, Build, Weapon } from "@prisma/client";
+import type { Attachment, Weapon } from "@prisma/client";
 import Panel from "../ui/Panel";
 import type { SortOption } from "../../types/Filters";
+import type { BuildWithReviewsAndAuthor } from "../../types/Builds";
 
 type FilteredBuildGridProps = {
   userFavorites: string[] | null;
@@ -34,8 +35,8 @@ const FilteredBuildGrid = (props: FilteredBuildGridProps) => {
       }
     }
     if (filteredAttachmentIds.length > 0) {
-      for (const attachment of build.attachments) {
-        if (!filteredAttachmentIds.includes(attachment.id)) {
+      for (const attachmentSetup of build.attachmentSetups) {
+        if (!filteredAttachmentIds.includes(attachmentSetup.attachment.id)) {
           return false;
         }
       }
@@ -64,15 +65,7 @@ const FilteredBuildGrid = (props: FilteredBuildGridProps) => {
 };
 
 type BuildGridProps = {
-  builds: (Build & {
-    weapon: Weapon;
-    author: {
-      id: string;
-      name: string | null;
-      image: string | null;
-    };
-    attachments: Attachment[];
-  })[];
+  builds: BuildWithReviewsAndAuthor[];
   userFavorites: string[] | null;
   emptyMessage?: string;
 };
@@ -81,35 +74,29 @@ export const BuildGrid = (props: BuildGridProps) => {
   const { builds, userFavorites, emptyMessage = "No builds found." } = props;
 
   return (
-    <div className="flex w-full flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3">
-      {builds.map((build, index) => {
-        return (
-          <BuildCard
-            build={build}
-            key={`build-${index}`}
-            userFavorites={userFavorites}
-          />
-        );
-      })}
+    <>
+      <div className="flex w-full flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3">
+        {builds.map((build, index) => {
+          return (
+            <BuildCard
+              build={build}
+              key={`build-${index}`}
+              userFavorites={userFavorites}
+            />
+          );
+        })}
+      </div>
       {builds.length === 0 && (
         <Panel>
           <div className="text-center text-white">{emptyMessage}</div>
         </Panel>
       )}
-    </div>
+    </>
   );
 };
 
 type BuildCardProps = {
-  build: Build & {
-    weapon: Weapon;
-    author: {
-      id: string;
-      name: string | null;
-      image: string | null;
-    };
-    attachments: Attachment[];
-  };
+  build: BuildWithReviewsAndAuthor;
   userFavorites?: string[] | null;
 };
 
@@ -160,7 +147,7 @@ export const BuildCard = (props: BuildCardProps) => {
               <div className="p-2">
                 <div className="mb-2">{build.weapon.name}</div>
                 <div className="flex w-full flex-row gap-2 ">
-                  {build.attachments.map((attachment, index) => {
+                  {build.attachmentSetups.map((attachmentSetup, index) => {
                     return (
                       <div key={index} className="text-sm">
                         <div className="h-4 w-4 bg-orange-500"></div>

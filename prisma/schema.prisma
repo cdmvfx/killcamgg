@@ -48,18 +48,37 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  createdAt     DateTime  @default(now())
-  name          String?   @unique
-  email         String?   @unique
+  id            String        @id @default(cuid())
+  createdAt     DateTime      @default(now())
+  name          String?       @unique
+  email         String?       @unique
   emailVerified DateTime?
   image         String?
+  isVerified    Boolean       @default(false)
+  role          Role          @default(USER)
+  rank          Rank          @default(SCRUB)
   accounts      Account[]
   sessions      Session[]
-  builds        Build[]   @relation("User Builds")
+  builds        Build[]       @relation("User Builds")
   reviews       Review[]
-  favorites     Build[]   @relation("User Favorites")
+  favorites     Build[]       @relation("User Favorites")
   socials       Social[]
+  activityLogs  ActivityLog[]
+}
+
+enum Role {
+  ADMIN
+  MODERATOR
+  USER
+  CREATOR
+}
+
+enum Rank {
+  SCRUB
+  NOOB
+  ROOKIE
+  CRACKED
+  GOATED
 }
 
 model VerificationToken {
@@ -88,20 +107,32 @@ enum SocialPlatforms {
 }
 
 model Build {
-  id            String       @id @default(cuid())
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  authorId      String
-  author        User         @relation("User Builds", fields: [authorId], references: [id])
-  title         String
-  description   String?
-  weapon        Weapon       @relation(fields: [weaponId], references: [id])
-  weaponId      Int
-  attachments   Attachment[]
-  reviews       Review[]
-  favorites     User[]       @relation("User Favorites")
-  averageRating Float        @default(0)
-  totalReviews  Int          @default(0)
+  id               String            @id @default(cuid())
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  authorId         String
+  author           User              @relation("User Builds", fields: [authorId], references: [id])
+  title            String
+  description      String?
+  weapon           Weapon            @relation(fields: [weaponId], references: [id])
+  weaponId         Int
+  attachmentSetups AttachmentSetup[]
+  reviews          Review[]
+  favorites        User[]            @relation("User Favorites")
+  averageRating    Float             @default(0)
+  totalReviews     Int               @default(0)
+  isApproved       Boolean           @default(false)
+  activityLogs     ActivityLog[]
+}
+
+model AttachmentSetup {
+  id           String     @id @default(cuid())
+  buildId      String
+  build        Build      @relation(fields: [buildId], references: [id])
+  attachmentId Int
+  attachment   Attachment @relation(fields: [attachmentId], references: [id])
+  horizontal   String
+  vertical     String
 }
 
 model Weapon {
@@ -126,11 +157,11 @@ enum WeaponCategory {
 }
 
 model Attachment {
-  id         Int                @id @default(autoincrement())
-  name       String
-  category   AttachmentCategory
-  unlock_req String?            @default("")
-  builds     Build[]
+  id               Int                @id @default(autoincrement())
+  name             String
+  category         AttachmentCategory
+  unlock_req       String?            @default("")
+  attachmentSetups AttachmentSetup[]
 }
 
 enum AttachmentCategory {
@@ -150,15 +181,39 @@ enum AttachmentCategory {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  buildId   String
-  build     Build    @relation(fields: [buildId], references: [id])
-  isLike    Boolean?
-  content   String?
+  id           String        @id @default(cuid())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  authorId     String
+  author       User          @relation(fields: [authorId], references: [id])
+  buildId      String
+  build        Build         @relation(fields: [buildId], references: [id])
+  isLike       Boolean?
+  content      String?
+  activityLogs ActivityLog[]
 
   @@unique([authorId, buildId])
+}
+
+enum ActivityType {
+  APPROVED_BUILD
+  REJECTED_BUILD
+  DELETED_BUILD
+  BANNED_USER
+  UNBANNED_USER
+  VERIFIED_USER
+  UNVERIFIED_USER
+  DELETED_REVIEW
+}
+
+model ActivityLog {
+  id        String       @id @default(cuid())
+  createdAt DateTime     @default(now())
+  type      ActivityType
+  userId    String?
+  user      User?        @relation(fields: [userId], references: [id])
+  buildId   String?
+  build     Build?       @relation(fields: [buildId], references: [id])
+  reviewId  String?
+  review    Review?      @relation(fields: [reviewId], references: [id])
 }

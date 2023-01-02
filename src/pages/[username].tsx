@@ -137,7 +137,11 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
             },
           },
           weapon: true,
-          attachments: true,
+          attachmentSetups: {
+            include: {
+              attachment: true,
+            },
+          },
         },
       },
       reviews: {
@@ -155,7 +159,11 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
             },
           },
           weapon: true,
-          attachments: true,
+          attachmentSetups: {
+            include: {
+              attachment: true,
+            },
+          },
         },
       },
     },

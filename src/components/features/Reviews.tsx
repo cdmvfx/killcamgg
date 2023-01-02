@@ -1,4 +1,4 @@
-import type { Attachment, Build, Review, User, Weapon } from "@prisma/client";
+import type { Build, Review, User } from "@prisma/client";
 import Link from "next/link";
 import { z } from "zod";
 import { trpc } from "../../utils/trpc";
@@ -15,31 +15,8 @@ import {
 } from "react-icons/md";
 import Panel from "../ui/Panel";
 
-type BuildWithReviewsAndAuthor = Build & {
-  weapon: Weapon;
-  reviews: (Review & {
-    author: {
-      id: string;
-      name: string | null;
-      image: string | null;
-    };
-  })[];
-  author: {
-    id: string;
-    name: string | null;
-    image: string | null;
-  };
-  attachments: Attachment[];
-};
-
-type ReviewWithAuthorAndBuild = Review & {
-  author?: {
-    id: string;
-    name: string | null;
-    image: string | null;
-  };
-  build?: Build;
-};
+import type { BuildWithReviewsAndAuthor } from "../../types/Builds";
+import type { ReviewWithAuthorAndBuild } from "../../types/Reviews";
 
 type ReviewItemProps = {
   build?: BuildWithReviewsAndAuthor;

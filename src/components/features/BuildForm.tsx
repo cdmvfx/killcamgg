@@ -11,7 +11,7 @@ import type {
 import Alert from "../ui/Alert";
 import Heading from "../ui/Heading";
 import Panel from "../ui/Panel";
-import type { AttachmentTuning } from "../../types/Attachments";
+import type { AttachmentSetupWithAttachment } from "../../types/Attachments";
 import { useSession } from "next-auth/react";
 import type { BuildGetOneResult } from "../../types/Builds";
 import { useRouter } from "next/router";
@@ -50,7 +50,15 @@ const BuildForm = (props: BuildFormProps) => {
       setTitle("");
       setDescription("");
       setSelectedWeapon(null);
-      setSelectedAttachments([]);
+      setSelectedAttachments([
+        {
+          attachment: null,
+          horizontal: "0",
+          vertical: "0",
+        },
+      ]);
+      setNumOfAttachments(1);
+      setSuccess(true);
     },
   });
 
@@ -75,21 +83,20 @@ const BuildForm = (props: BuildFormProps) => {
   const [selectedWeapon, setSelectedWeapon] = useState<Weapon | null>(
     existingBuild?.weapon || null
   );
-  const [selectedAttachments, setSelectedAttachments] = useState<Attachment[]>(
-    existingBuild?.attachments || []
+  const [selectedAttachments, setSelectedAttachments] = useState<
+    AttachmentSetupWithAttachment[]
+  >(
+    existingBuild?.attachmentSetups || [
+      {
+        attachment: null,
+        horizontal: "0",
+        vertical: "0",
+      },
+    ]
   );
   const [numOfAttachments, setNumOfAttachments] = useState(
-    existingBuild?.attachments.length || 1
+    existingBuild?.attachmentSetups.length || 1
   );
-
-  const [attachmentTunings, setAttachmentTunings] = useState<
-    AttachmentTuning[]
-  >([
-    {
-      horizontal: "0",
-      vertical: "0",
-    },
-  ]);
 
   const [openWeaponCategory, setOpenWeaponCategory] = useState<string | null>(
     null
@@ -103,39 +110,36 @@ const BuildForm = (props: BuildFormProps) => {
     title: [],
     description: [],
     weaponId: [],
-    attachmentIds: [],
+    attachmentSetups: [],
   });
 
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
-  // Functions
-  const handleAttachmentChange = (attachment: Attachment, index: number) => {
-    setSelectedAttachments((current) => {
-      const newAttachments = [...current];
-      newAttachments[index] = attachment;
-      return newAttachments;
-    });
-  };
+  const [success, setSuccess] = useState(false);
+
+  console.log("Selected attachments", selectedAttachments);
 
   const addAttachment = () => {
     if (numOfAttachments >= 5) return;
     setNumOfAttachments((current) => current + 1);
-    setAttachmentTunings((current) => [
+    setSelectedAttachments((current) => [
       ...current,
-      { horizontal: "0", vertical: "0" },
+      {
+        attachment: null,
+        horizontal: "0",
+        vertical: "0",
+      },
     ]);
   };
-
-  console.log("attachmentTunings", attachmentTunings);
 
   const removeAttachment = (index: number) => {
     console.log("Removing", index, selectedAttachments[index]);
     setSelectedAttachments((current) => current.filter((_, i) => i !== index));
     setNumOfAttachments((current) => current - 1);
-    setAttachmentTunings((current) => current.filter((_, i) => i !== index));
   };
 
   const clickDeleteBuild = () => {
+    setErrors({});
     setShowDeleteAlert(true);
   };
 
@@ -155,21 +159,33 @@ const BuildForm = (props: BuildFormProps) => {
     setTitle(existingBuild?.title || "");
     setDescription(existingBuild?.description || "");
     setSelectedWeapon(existingBuild?.weapon || null);
-    setSelectedAttachments(existingBuild?.attachments || []);
+    setSelectedAttachments(existingBuild?.attachmentSetups || []);
   };
 
-  const handleAttachmentTuningChange = (
+  const handleAttachmentChange = (attachment: Attachment, index: number) => {
+    setSelectedAttachments((current) => {
+      const newAttachments = [...current];
+      newAttachments[index] = {
+        attachment: attachment,
+        horizontal: "0",
+        vertical: "0",
+      };
+      return newAttachments;
+    });
+  };
+
+  const handleTuningChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     index: number,
     direction: "vertical" | "horizontal"
   ) => {
-    setAttachmentTunings((current) => {
-      const newTunings = [...current];
+    setSelectedAttachments((current) => {
+      const newAttachments = [...current];
 
-      (newTunings[index] as AttachmentTuning)[direction] =
+      (newAttachments[index] as AttachmentSetupWithAttachment)[direction] =
         e.target.value || "0";
 
-      return newTunings;
+      return newAttachments;
     });
   };
 
@@ -178,43 +194,74 @@ const BuildForm = (props: BuildFormProps) => {
 
     if (!session) return;
 
-    const formSchema = z.object({
-      title: z
-        .string({
-          required_error: "Title is required",
-        })
-        .min(5, {
-          message: "Title must be at least 5 characters",
-        })
-        .max(50, {
-          message: "Title must be less than 50 characters",
-        }),
-      description: z.string().max(500, {
-        message: "Description must be less than 500 characters",
-      }),
-      weaponId: z.number({
-        required_error: "You must select a weapon",
-      }),
-      attachmentIds: z
-        .array(z.number())
-        .min(0, {
-          message: "You must select at least 1 attachment",
-        })
-        .max(5),
-    });
-
     const formData = {
       userId: session.user?.id as string,
       title,
       description,
       weaponId: selectedWeapon?.id as number,
-      attachmentIds: selectedAttachments.map((attachment) => attachment.id),
+      attachmentSetups: selectedAttachments.map((attachmentSetup) => ({
+        attachmentId: attachmentSetup.attachment?.id,
+        horizontal: attachmentSetup.horizontal,
+        vertical: attachmentSetup.vertical,
+      })),
     };
 
     console.log(formData);
 
+    const formSchema = z.object({
+      title: z
+        .string({
+          required_error: "Title is required.",
+        })
+        .min(5, {
+          message: "Title must be at least 5 characters.",
+        })
+        .max(50, {
+          message: "Title must be less than 50 characters.",
+        }),
+      description: z
+        .string()
+        .min(50, {
+          message: "Description must be at least 50 characters.",
+        })
+        .max(500, {
+          message: "Description must be less than 500 characters.",
+        }),
+      weaponId: z.number({
+        required_error: "You must select a weapon.",
+      }),
+      attachmentSetups: z
+        .array(
+          z.object({
+            attachmentId: z.number({
+              required_error: "You must select an attachment.",
+            }),
+            horizontal: z.string(),
+            vertical: z.string(),
+          })
+        )
+        .min(1, {
+          message: "You must select at least one attachment.",
+        })
+        .max(5, {
+          message: "You can only select up to 5 attachments.",
+        }),
+    });
+
     try {
-      formSchema.parse(formData);
+      const formDataFinal = formSchema.parse(formData);
+      console.log("Final form data", formDataFinal);
+
+      if (existingBuild) {
+        const updateData = {
+          ...formDataFinal,
+          id: existingBuild.id as string,
+        };
+        updateBuild.mutate(updateData);
+        return;
+      }
+
+      postBuild.mutate(formDataFinal);
     } catch (error) {
       if (error instanceof z.ZodError) {
         console.log(error.flatten());
@@ -222,20 +269,6 @@ const BuildForm = (props: BuildFormProps) => {
       }
       return;
     }
-
-    if (existingBuild) {
-      const updateData = {
-        id: existingBuild.id as string,
-        title,
-        description,
-        weaponId: selectedWeapon?.id as number,
-        attachmentIds: selectedAttachments.map((attachment) => attachment.id),
-      };
-      updateBuild.mutate(updateData);
-      return;
-    }
-
-    postBuild.mutate(formData);
   };
 
   if (
@@ -243,8 +276,18 @@ const BuildForm = (props: BuildFormProps) => {
     isLoadingAttachments ||
     !weaponsByCategory ||
     !attachmentsByCategory
-  )
+  ) {
     return <Spinner />;
+  }
+
+  if (success) {
+    return (
+      <Alert
+        status="success"
+        message={existingBuild ? "Build updated!" : "Build submitted!"}
+      />
+    );
+  }
 
   return (
     <div>
@@ -255,7 +298,7 @@ const BuildForm = (props: BuildFormProps) => {
           <input
             type="text"
             value={title}
-            placeholder="S1ck3st M4 LAZERBEAM"
+            placeholder="Name your build!"
             minLength={5}
             maxLength={100}
             onChange={(e) => setTitle(e.target.value)}
@@ -267,6 +310,7 @@ const BuildForm = (props: BuildFormProps) => {
                 key={`title-error-${index}`}
                 status="error"
                 message={error}
+                className="mt-2"
               />
             ))}
         </div>
@@ -274,13 +318,22 @@ const BuildForm = (props: BuildFormProps) => {
           <label>Description</label>
           <textarea
             value={description}
-            placeholder=""
+            placeholder="Give your build a description! Include details like your playstyle, what you like about the build, why you chose certain attachments, etc."
             minLength={5}
             maxLength={100}
             rows={4}
             onChange={(e) => setDescription(e.target.value)}
             className=""
           />
+          {errors.description &&
+            errors.description.map((error, index) => (
+              <Alert
+                key={`description-error-${index}`}
+                status="error"
+                message={error}
+                className="mt-2"
+              />
+            ))}
         </div>
         {!isLoadingWeapons && (
           <div>
@@ -368,9 +421,12 @@ const BuildForm = (props: BuildFormProps) => {
                       <div key={`attachment-${attachmentNum}`}>
                         <div className="relative mb-4 w-full">
                           <Listbox
-                            value={selectedAttachments[index]}
+                            value={selectedAttachments[index]?.attachment}
                             onChange={(attachment) =>
-                              handleAttachmentChange(attachment, index)
+                              handleAttachmentChange(
+                                attachment as Attachment,
+                                index
+                              )
                             }
                           >
                             <div className="flex items-center gap-4">
@@ -381,13 +437,19 @@ const BuildForm = (props: BuildFormProps) => {
                                 <IoMdClose />
                               </button>
                               <Listbox.Button className={"mb-0 w-full"}>
-                                {selectedAttachments[index] ? (
+                                {selectedAttachments[index]?.attachment ? (
                                   <>
                                     <label>
-                                      {selectedAttachments[index]?.category}
+                                      {
+                                        selectedAttachments[index]?.attachment
+                                          ?.category
+                                      }
                                     </label>
                                     <div>
-                                      {selectedAttachments[index]?.name}
+                                      {
+                                        selectedAttachments[index]?.attachment
+                                          ?.name
+                                      }
                                     </div>
                                   </>
                                 ) : (
@@ -399,13 +461,11 @@ const BuildForm = (props: BuildFormProps) => {
                                   <FaArrowsAltH />
                                   <input
                                     type="text"
-                                    value={attachmentTunings[index]?.horizontal}
+                                    value={
+                                      selectedAttachments[index]?.horizontal
+                                    }
                                     onChange={(e) =>
-                                      handleAttachmentTuningChange(
-                                        e,
-                                        index,
-                                        "horizontal"
-                                      )
+                                      handleTuningChange(e, index, "horizontal")
                                     }
                                     className="appearance-[textfield] m-0 h-full w-16"
                                   />
@@ -414,13 +474,9 @@ const BuildForm = (props: BuildFormProps) => {
                                   <FaArrowsAltV />
                                   <input
                                     type="text"
-                                    value={attachmentTunings[index]?.vertical}
+                                    value={selectedAttachments[index]?.vertical}
                                     onChange={(e) =>
-                                      handleAttachmentTuningChange(
-                                        e,
-                                        index,
-                                        "vertical"
-                                      )
+                                      handleTuningChange(e, index, "vertical")
                                     }
                                     className="h-full w-16"
                                   />
@@ -442,12 +498,14 @@ const BuildForm = (props: BuildFormProps) => {
                                 {Object.keys(attachmentsByCategory).map(
                                   (category) =>
                                     selectedAttachments.some(
-                                      (attachment) =>
-                                        attachment.category === category &&
-                                        selectedAttachments[index]?.category !==
-                                          category
+                                      (attachmentSetup) =>
+                                        attachmentSetup.attachment &&
+                                        attachmentSetup.attachment.category ===
+                                          category &&
+                                        selectedAttachments[index]?.attachment
+                                          ?.category !== category
                                     ) ? (
-                                      <></>
+                                      ""
                                     ) : (
                                       <div
                                         key={`weapon-filter-category-${category}`}
@@ -475,7 +533,7 @@ const BuildForm = (props: BuildFormProps) => {
                                               category as AttachmentCategory
                                             ].map((attachment) => (
                                               <Listbox.Option
-                                                key={attachment.id}
+                                                key={`attachment-${index}-${attachment.id}`}
                                                 value={attachment}
                                               >
                                                 {({ selected }) => (
@@ -519,6 +577,15 @@ const BuildForm = (props: BuildFormProps) => {
                   ))}
               </div>
             </Panel>
+            {errors.attachmentSetups &&
+              errors.attachmentSetups.map((error, index) => (
+                <Alert
+                  key={`attachmentSetups-error-${index}`}
+                  status="error"
+                  message={error}
+                  className="mt-2"
+                />
+              ))}
           </div>
         )}
         <div>
@@ -552,9 +619,12 @@ const BuildForm = (props: BuildFormProps) => {
               <Alert
                 status="error"
                 message="Are you sure you want to delete this build? This process is not reversable."
+                className="mb-2"
               />
-              <button onClick={clickDeleteBuildFinal}>Delete Build</button>
-              <button className="secondary" onClick={clickDeleteCancel}>
+              <button className="w-full" onClick={clickDeleteBuildFinal}>
+                Delete Build
+              </button>
+              <button className="secondary w-full" onClick={clickDeleteCancel}>
                 Cancel
               </button>
             </>

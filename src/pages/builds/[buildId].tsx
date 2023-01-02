@@ -25,6 +25,7 @@ import type { Review } from "@prisma/client";
 import type { Dispatch, SetStateAction } from "react";
 import Spinner from "../../components/ui/Spinner";
 import { Dialog, Transition } from "@headlessui/react";
+import Image from "next/image";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
@@ -158,7 +159,7 @@ const BuildPage: NextPage<PageProps> = (props) => {
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full md:p-4">
+            <div className="flex min-h-full justify-center md:p-4">
               <Transition.Child
                 as={React.Fragment}
                 enter="ease-out duration-300"
@@ -189,7 +190,6 @@ const BuildHeader = ({
   isFavorited,
   changeFavorite,
   averageRating,
-  showBuildForm,
   setShowBuildForm,
   isLiked,
 }: PageProps & {
@@ -344,13 +344,17 @@ const BuildHeader = ({
         )}
       </div>
       <div className="hidden md:flex">
-        <img
+        <Image
           className=""
+          alt="Build Gun Image"
+          quality={100}
           style={{
             clipPath: "polygon(10% 0, 100% 0, 100% 100%, 0 100%)",
             borderRadius: "0 10px 10px 0",
           }}
-          src="https://www.theloadout.com/wp-content/sites/theloadout/2022/09/call-of-duty-modern-warfare-2-ftac-recon-battle-rifle-loadout-1-550x309.jpg"
+          src="/images/ftac-recon.jpg"
+          width={550}
+          height={309}
         />
       </div>
     </section>
@@ -375,13 +379,13 @@ const BuildInfo = ({ build }: Omit<PageProps, "user">) => {
           </div>
           <div>
             <div className="flex flex-col justify-center gap-4">
-              {build.attachments.map((attachment, index) => {
+              {build.attachmentSetups.map((attachmentSetup, index) => {
                 return (
                   <div key={index} className="flex items-center gap-2">
                     <div className="h-10 w-10 bg-orange-600"></div>
                     <div className="flex flex-col">
-                      <label>{attachment.category}</label>
-                      <div>{attachment.name}</div>
+                      <label>{attachmentSetup.attachment.category}</label>
+                      <div>{attachmentSetup.attachment.name}</div>
                     </div>
                   </div>
                 );
@@ -452,11 +456,15 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     };
   }
 
-  const build = await prisma.build.findFirst({
+  const build = await prisma.build.findUnique({
     where: { id: ctx.params.buildId },
     include: {
       weapon: true,
-      attachments: true,
+      attachmentSetups: {
+        include: {
+          attachment: true,
+        },
+      },
       author: {
         select: {
           id: true,
