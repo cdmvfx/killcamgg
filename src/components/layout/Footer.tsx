@@ -7,7 +7,7 @@ const Footer = () => {
       <div>
         Coded by{" "}
         <Link className="text-orange-600" href="https://twitter.com/cdmvfx">
-          @cdm.vfx
+          @cdmvfx
         </Link>
       </div>
     </footer>
