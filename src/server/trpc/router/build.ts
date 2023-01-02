@@ -30,6 +30,34 @@ export const buildRouter = router({
 			console.log(error);
 		}
 	}),
+	getAllPendingApproval: protectedProcedure
+		.query(async ({ ctx }) => {
+			try {
+				return await ctx.prisma.build.findMany({
+					where: {
+						isApproved: false
+					},
+					include: {
+						weapon: true,
+						attachmentSetups: {
+							include: {
+								attachment: true
+							}
+						},
+						author: {
+							select: {
+								id: true,
+								name: true,
+								image: true,
+							},
+						},
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in build.getAllPendingApproval: ');
+			}
+		}),
 	getOne: publicProcedure
 		.input(
 			z.object({
