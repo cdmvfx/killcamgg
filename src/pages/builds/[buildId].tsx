@@ -26,6 +26,9 @@ import type { Dispatch, SetStateAction } from "react";
 import Spinner from "../../components/ui/Spinner";
 import { Dialog, Transition } from "@headlessui/react";
 import Image from "next/image";
+import { isAuthorized as checkIfModOrAdmin } from "../../utils/isAuthorized";
+import BuildModMenu from "../../components/features/BuildModMenu";
+import StatusBadge from "../../components/ui/StatusBadge";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
@@ -251,12 +254,15 @@ const BuildHeader = ({
     });
   };
 
+  const isAuthorized = checkIfModOrAdmin(user);
+
   return (
     <section className="flex flex-col justify-between bg-black bg-opacity-50 md:flex-row md:rounded-lg">
       <div className="flex flex-col justify-center gap-4 p-4 md:basis-1/2 md:p-8">
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-col gap-4">
             <h1 className="mb-0">{build.title}</h1>
+            <div>{isAuthorized && <StatusBadge status={build.status} />}</div>
             <div className="w-fit">
               <UserAvatar user={build.author} showAvatar={true} />
             </div>
@@ -312,14 +318,6 @@ const BuildHeader = ({
                 </>
               )}
             </div>
-            {user && user.id === build.authorId && (
-              <button
-                className="hidden w-full md:block md:w-48"
-                onClick={() => setShowBuildForm(true)}
-              >
-                Edit Build
-              </button>
-            )}
           </div>
           <div className="text-center">
             <div className="flex items-center text-4xl lg:text-6xl">
@@ -334,14 +332,17 @@ const BuildHeader = ({
             </div>
           </div>
         </div>
-        {user && user.id === build.authorId && (
-          <button
-            className="w-full md:hidden md:w-48"
-            onClick={() => setShowBuildForm(true)}
-          >
-            Edit Build
-          </button>
-        )}
+        <div className="flex flex-col gap-2 lg:flex-row">
+          {user && user.id === build.authorId && (
+            <button
+              className="mb-0 w-full md:w-64"
+              onClick={() => setShowBuildForm(true)}
+            >
+              Edit Build
+            </button>
+          )}
+          {isAuthorized && <BuildModMenu build={build} />}
+        </div>
       </div>
       <div className="hidden md:flex">
         <Image
@@ -365,7 +366,7 @@ const BuildInfo = ({ build }: Omit<PageProps, "user">) => {
   return (
     <section className="p-4 md:p-0">
       <Heading>Build Information</Heading>
-      <Panel className="p-8">
+      <Panel className="lg:p-8">
         <div className="build-info">
           {build.description && (
             <div className="mb-4">

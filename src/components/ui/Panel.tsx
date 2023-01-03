@@ -7,7 +7,7 @@ const Panel = ({
 }) => {
   return (
     <div
-      className={`panel h-full w-full rounded-md border border-transparent bg-black bg-opacity-50 p-4 transition-all lg:p-4 ${className}`}
+      className={`panel h-full w-full rounded-md border border-transparent bg-black bg-opacity-50 p-4 transition-all ${className}`}
     >
       {children}
     </div>

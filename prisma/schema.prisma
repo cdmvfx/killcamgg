@@ -121,8 +121,14 @@ model Build {
   favorites        User[]            @relation("User Favorites")
   averageRating    Float             @default(0)
   totalReviews     Int               @default(0)
-  isApproved       Boolean           @default(false)
+  status           BuildStatus       @default(PENDING)
   activityLogs     ActivityLog[]
+}
+
+enum BuildStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model AttachmentSetup {

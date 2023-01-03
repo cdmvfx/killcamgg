@@ -1,10 +1,11 @@
+import { publicProcedure } from './../trpc';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { TRPCError } from '@trpc/server';
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 
 export const reviewRouter = router({
-	getOne: protectedProcedure
+	getOne: publicProcedure
 		.input(
 			z.object({
 				buildId: z.string(),
@@ -12,10 +13,13 @@ export const reviewRouter = router({
 		)
 		.query(async ({ ctx, input }) => {
 			try {
+				if (!ctx.session?.user?.id) {
+					return null;
+				}
 				return await ctx.prisma.review.findUnique({
 					where: {
 						authorId_buildId: {
-							authorId: ctx.session.user.id,
+							authorId: ctx.session?.user?.id,
 							buildId: input.buildId
 						}
 					}

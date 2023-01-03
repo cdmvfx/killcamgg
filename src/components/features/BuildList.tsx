@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { trpc } from "../../utils/trpc";
-import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
+import { IoMdHeart, IoMdStar } from "react-icons/io";
 import Spinner from "../ui/Spinner";
 
 import type { Attachment, Weapon } from "@prisma/client";
@@ -157,7 +157,7 @@ export const BuildCard = (props: BuildCardProps) => {
                 </div>
               </div>
               <div className="p-2 text-2xl text-red-500">
-                {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
+                {isFavorited ? <IoMdHeart /> : ""}
               </div>
             </div>
           </div>

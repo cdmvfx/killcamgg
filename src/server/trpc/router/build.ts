@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure, modOrAdminProcedure } from "../trpc";
 
 export const buildRouter = router({
 	getAll: publicProcedure.query(async ({ ctx }) => {
 		try {
 			return await ctx.prisma.build.findMany({
 				where: {
-					isApproved: true
+					status: "APPROVED"
 				},
 				include: {
 					weapon: true,
@@ -30,12 +30,40 @@ export const buildRouter = router({
 			console.log(error);
 		}
 	}),
-	getAllPendingApproval: protectedProcedure
+	getAllPending: modOrAdminProcedure
 		.query(async ({ ctx }) => {
 			try {
 				return await ctx.prisma.build.findMany({
 					where: {
-						isApproved: false
+						status: "PENDING"
+					},
+					include: {
+						weapon: true,
+						attachmentSetups: {
+							include: {
+								attachment: true
+							}
+						},
+						author: {
+							select: {
+								id: true,
+								name: true,
+								image: true,
+							},
+						},
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in build.getAllPendingApproval: ');
+			}
+		}),
+	getAllRejected: modOrAdminProcedure
+		.query(async ({ ctx }) => {
+			try {
+				return await ctx.prisma.build.findMany({
+					where: {
+						status: "REJECTED"
 					},
 					include: {
 						weapon: true,
@@ -188,6 +216,58 @@ export const buildRouter = router({
 				})
 			} catch (error) {
 				console.log(error);
+			}
+		}),
+	approve: modOrAdminProcedure
+		.input(
+			z.object({
+				id: z.string()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				await ctx.prisma.build.update({
+					where: { id: input.id },
+					data: {
+						status: "APPROVED"
+					}
+				})
+
+				await ctx.prisma.activityLog.create({
+					data: {
+						userId: ctx.session.user.id,
+						type: "APPROVED_BUILD",
+						buildId: input.id
+					}
+				})
+			} catch (error) {
+				console.log('Error approving build.', error);
+			}
+		}),
+	reject: modOrAdminProcedure
+		.input(
+			z.object({
+				id: z.string()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				await ctx.prisma.build.update({
+					where: { id: input.id },
+					data: {
+						status: "REJECTED"
+					}
+				})
+
+				await ctx.prisma.activityLog.create({
+					data: {
+						userId: ctx.session.user.id,
+						type: "REJECTED_BUILD",
+						buildId: input.id
+					}
+				})
+			} catch (error) {
+				console.log('Error approving build.', error);
 			}
 		})
 
