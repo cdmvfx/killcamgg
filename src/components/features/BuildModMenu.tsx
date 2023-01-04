@@ -44,10 +44,10 @@ const BuildModMenu = (props: Props) => {
         <Spinner />
       ) : (
         <Popover className="relative">
-          <Popover.Button className="mb-0">Mod Actions</Popover.Button>
+          <Popover.Button className="mb-0 md:w-48">Mod Actions</Popover.Button>
 
-          <Popover.Panel className="absolute z-10 md:w-64">
-            <div className="w-full rounded-lg bg-neutral-900 p-4 md:w-64">
+          <Popover.Panel className="absolute z-10 md:w-48">
+            <div className="w-full rounded-lg bg-neutral-900 p-4 md:w-48">
               <button
                 className="w-full border-transparent bg-emerald-500 "
                 onClick={() => approveBuild()}

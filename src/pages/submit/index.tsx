@@ -1,4 +1,5 @@
 import BuildForm from "../../components/features/BuildForm";
+import Heading from "../../components/ui/Heading";
 import Panel from "../../components/ui/Panel";
 
 const SubmitPage = () => {
@@ -6,7 +7,7 @@ const SubmitPage = () => {
     <div className="flex flex-col gap-8 p-4 md:flex-row">
       <div className="basis-full md:basis-1/2">
         <Panel>
-          <h2 className="mb-4">Submission Rules</h2>
+          <Heading>Submission Rules</Heading>
           <div>
             <ol>
               <li>Submission cannot be a duplicate of another build.</li>
@@ -14,6 +15,7 @@ const SubmitPage = () => {
                 Every submission is subject to approval before being made
                 public.
               </li>
+              <li>Each build must have at least one attachment.</li>
             </ol>
           </div>
         </Panel>

@@ -419,7 +419,7 @@ const BuildForm = (props: BuildFormProps) => {
                   (attachmentNum, index) => {
                     return (
                       <div key={`attachment-${attachmentNum}`}>
-                        <div className="relative mb-4 w-full">
+                        <div className="relative z-10 mb-4 w-full">
                           <Listbox
                             value={selectedAttachments[index]?.attachment}
                             onChange={(attachment) =>
@@ -490,10 +490,10 @@ const BuildForm = (props: BuildFormProps) => {
                               leave="transform transition duration-150 ease-in-out"
                               leaveFrom="scale-100 opacity-100"
                               leaveTo="scale-0 opacity-0"
-                              className={`absolute top-[42px] z-10 max-h-64 w-full cursor-pointer overflow-y-scroll rounded-md shadow-xl`}
+                              className={`absolute top-[42px] z-50 max-h-64 w-full cursor-pointer overflow-y-scroll rounded-md shadow-xl`}
                             >
                               <Listbox.Options
-                                className={`w-full bg-neutral-800`}
+                                className={`w-full bg-neutral-800  pb-24`}
                               >
                                 {Object.keys(attachmentsByCategory).map(
                                   (category) =>
@@ -538,7 +538,7 @@ const BuildForm = (props: BuildFormProps) => {
                                               >
                                                 {({ selected }) => (
                                                   <li
-                                                    className={`border-l-orange-400 py-4 px-8 transition-all ${
+                                                    className={`border-l-orange-400 py-4 px-8 transition-all hover:text-orange-400 ${
                                                       selected
                                                         ? "border-l-4 text-orange-400"
                                                         : ""
