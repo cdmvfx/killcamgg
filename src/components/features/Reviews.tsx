@@ -178,6 +178,7 @@ export const ReviewForm = (props: ReviewFormProps) => {
               createdAt: new Date(),
               updatedAt: new Date(),
               buildId: build.id,
+              totalLikes: 0,
             },
           ],
         };
@@ -214,6 +215,7 @@ export const ReviewForm = (props: ReviewFormProps) => {
               createdAt: existingReview?.createdAt || new Date(),
               updatedAt: new Date(),
               buildId: build.id,
+              totalLikes: existingReview?.totalLikes || 0,
             },
           ],
         };

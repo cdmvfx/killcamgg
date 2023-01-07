@@ -337,7 +337,7 @@ const BuildForm = (props: BuildFormProps) => {
         </div>
         {!isLoadingWeapons && (
           <div>
-            <div className="relative w-full">
+            <div className="relative z-20 w-full">
               <Listbox value={selectedWeapon} onChange={setSelectedWeapon}>
                 <Listbox.Label className="mb-2 flex items-center justify-between">
                   <div>Weapon</div>
@@ -414,150 +414,146 @@ const BuildForm = (props: BuildFormProps) => {
           <div>
             <label>Select your attachments</label>
             <Panel>
-              <div>
+              <>
                 {Array.from(Array(numOfAttachments).keys()).map(
                   (attachmentNum, index) => {
                     return (
-                      <div key={`attachment-${attachmentNum}`}>
-                        <div className="relative z-10 mb-4 w-full">
-                          <Listbox
-                            value={selectedAttachments[index]?.attachment}
-                            onChange={(attachment) =>
-                              handleAttachmentChange(
-                                attachment as Attachment,
-                                index
-                              )
-                            }
-                          >
-                            <div className="flex items-center gap-4">
-                              <button
-                                onClick={() => removeAttachment(index)}
-                                className="tertiary mb-0 w-fit p-0 text-2xl"
-                              >
-                                <IoMdClose />
-                              </button>
-                              <Listbox.Button className={"mb-0 w-full"}>
-                                {selectedAttachments[index]?.attachment ? (
-                                  <>
-                                    <label>
-                                      {
-                                        selectedAttachments[index]?.attachment
-                                          ?.category
-                                      }
-                                    </label>
-                                    <div>
-                                      {
-                                        selectedAttachments[index]?.attachment
-                                          ?.name
-                                      }
-                                    </div>
-                                  </>
-                                ) : (
-                                  "Select an attachment"
-                                )}
-                              </Listbox.Button>
-                              <div className="flex flex-col gap-y-1 gap-x-4 lg:flex-row">
-                                <div className="flex items-center gap-2">
-                                  <FaArrowsAltH />
-                                  <input
-                                    type="text"
-                                    value={
-                                      selectedAttachments[index]?.horizontal
+                      <div
+                        key={`attachment-${attachmentNum}`}
+                        className="relative mb-4 w-full"
+                      >
+                        <Listbox
+                          value={selectedAttachments[index]?.attachment}
+                          onChange={(attachment) =>
+                            handleAttachmentChange(
+                              attachment as Attachment,
+                              index
+                            )
+                          }
+                        >
+                          <div className="relative flex items-center gap-4">
+                            <button
+                              onClick={() => removeAttachment(index)}
+                              className="tertiary mb-0 w-fit p-0 text-2xl"
+                            >
+                              <IoMdClose />
+                            </button>
+                            <Listbox.Button className={"mb-0 w-full"}>
+                              {selectedAttachments[index]?.attachment ? (
+                                <>
+                                  <label>
+                                    {
+                                      selectedAttachments[index]?.attachment
+                                        ?.category
                                     }
-                                    onChange={(e) =>
-                                      handleTuningChange(e, index, "horizontal")
+                                  </label>
+                                  <div>
+                                    {
+                                      selectedAttachments[index]?.attachment
+                                        ?.name
                                     }
-                                    className="appearance-[textfield] m-0 h-full w-16"
-                                  />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <FaArrowsAltV />
-                                  <input
-                                    type="text"
-                                    value={selectedAttachments[index]?.vertical}
-                                    onChange={(e) =>
-                                      handleTuningChange(e, index, "vertical")
-                                    }
-                                    className="h-full w-16"
-                                  />
-                                </div>
+                                  </div>
+                                </>
+                              ) : (
+                                "Select an attachment"
+                              )}
+                            </Listbox.Button>
+                            <div className="flex flex-col gap-y-1 gap-x-4 lg:flex-row">
+                              <div className="flex items-center gap-2">
+                                <FaArrowsAltH />
+                                <input
+                                  type="text"
+                                  value={selectedAttachments[index]?.horizontal}
+                                  onChange={(e) =>
+                                    handleTuningChange(e, index, "horizontal")
+                                  }
+                                  className="appearance-[textfield] m-0 h-full w-16"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <FaArrowsAltV />
+                                <input
+                                  type="text"
+                                  value={selectedAttachments[index]?.vertical}
+                                  onChange={(e) =>
+                                    handleTuningChange(e, index, "vertical")
+                                  }
+                                  className="h-full w-16"
+                                />
                               </div>
                             </div>
-                            <Transition
-                              enter="transform transition duration-150 ease-in-out"
-                              enterFrom="scale-0 opacity-0"
-                              enterTo="scale-100 opacity-100"
-                              leave="transform transition duration-150 ease-in-out"
-                              leaveFrom="scale-100 opacity-100"
-                              leaveTo="scale-0 opacity-0"
-                              className={`absolute top-[42px] z-50 max-h-64 w-full cursor-pointer overflow-y-scroll rounded-md shadow-xl`}
+                          </div>
+                          <Transition
+                            enter="transform transition duration-150 ease-in-out"
+                            enterFrom="scale-0 opacity-0"
+                            enterTo="scale-100 opacity-100"
+                            leave="transform transition duration-150 ease-in-out"
+                            leaveFrom="scale-100 opacity-100"
+                            leaveTo="scale-0 opacity-0"
+                            className={`absolute top-[42px] z-50 max-h-64 w-full cursor-pointer overflow-y-scroll rounded-md shadow-xl`}
+                          >
+                            <Listbox.Options
+                              className={`w-full bg-neutral-800  pb-24`}
                             >
-                              <Listbox.Options
-                                className={`w-full bg-neutral-800  pb-24`}
-                              >
-                                {Object.keys(attachmentsByCategory).map(
-                                  (category) =>
-                                    selectedAttachments.some(
-                                      (attachmentSetup) =>
-                                        attachmentSetup.attachment &&
-                                        attachmentSetup.attachment.category ===
-                                          category &&
-                                        selectedAttachments[index]?.attachment
-                                          ?.category !== category
-                                    ) ? (
-                                      ""
-                                    ) : (
+                              {Object.keys(attachmentsByCategory).map(
+                                (category) =>
+                                  selectedAttachments.some(
+                                    (attachmentSetup) =>
+                                      attachmentSetup.attachment &&
+                                      attachmentSetup.attachment.category ===
+                                        category &&
+                                      selectedAttachments[index]?.attachment
+                                        ?.category !== category
+                                  ) ? (
+                                    ""
+                                  ) : (
+                                    <div
+                                      key={`weapon-filter-category-${category}`}
+                                    >
                                       <div
-                                        key={`weapon-filter-category-${category}`}
+                                        className={`border-l-orange-400 p-4 transition-all hover:text-orange-400 ${
+                                          openAttachmentCategory === category
+                                            ? "border-l-4 text-orange-400"
+                                            : ""
+                                        }`}
+                                        onClick={() =>
+                                          setOpenAttachmentCategory((state) =>
+                                            state === category ? null : category
+                                          )
+                                        }
                                       >
-                                        <div
-                                          className={`border-l-orange-400 p-4 transition-all hover:text-orange-400 ${
-                                            openAttachmentCategory === category
-                                              ? "border-l-4 text-orange-400"
-                                              : ""
-                                          }`}
-                                          onClick={() =>
-                                            setOpenAttachmentCategory((state) =>
-                                              state === category
-                                                ? null
-                                                : category
-                                            )
-                                          }
-                                        >
-                                          {category}
-                                        </div>
-                                        {openAttachmentCategory ===
-                                          category && (
-                                          <div>
-                                            {attachmentsByCategory[
-                                              category as AttachmentCategory
-                                            ].map((attachment) => (
-                                              <Listbox.Option
-                                                key={`attachment-${index}-${attachment.id}`}
-                                                value={attachment}
-                                              >
-                                                {({ selected }) => (
-                                                  <li
-                                                    className={`border-l-orange-400 py-4 px-8 transition-all hover:text-orange-400 ${
-                                                      selected
-                                                        ? "border-l-4 text-orange-400"
-                                                        : ""
-                                                    }`}
-                                                  >
-                                                    {attachment.name}
-                                                  </li>
-                                                )}
-                                              </Listbox.Option>
-                                            ))}
-                                          </div>
-                                        )}
+                                        {category}
                                       </div>
-                                    )
-                                )}
-                              </Listbox.Options>
-                            </Transition>
-                          </Listbox>
-                        </div>
+                                      {openAttachmentCategory === category && (
+                                        <div>
+                                          {attachmentsByCategory[
+                                            category as AttachmentCategory
+                                          ].map((attachment) => (
+                                            <Listbox.Option
+                                              key={`attachment-${index}-${attachment.id}`}
+                                              value={attachment}
+                                            >
+                                              {({ selected }) => (
+                                                <li
+                                                  className={`border-l-orange-400 py-4 px-8 transition-all hover:text-orange-400 ${
+                                                    selected
+                                                      ? "border-l-4 text-orange-400"
+                                                      : ""
+                                                  }`}
+                                                >
+                                                  {attachment.name}
+                                                </li>
+                                              )}
+                                            </Listbox.Option>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )
+                              )}
+                            </Listbox.Options>
+                          </Transition>
+                        </Listbox>
                       </div>
                     );
                   }
@@ -575,7 +571,7 @@ const BuildForm = (props: BuildFormProps) => {
                       message={error}
                     />
                   ))}
-              </div>
+              </>
             </Panel>
             {errors.attachmentSetups &&
               errors.attachmentSetups.map((error, index) => (
