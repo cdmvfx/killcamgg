@@ -21,7 +21,6 @@ import type {
   InferGetServerSidePropsType,
   NextPage,
 } from "next";
-import type { Review } from "@prisma/client";
 import type { Dispatch, SetStateAction } from "react";
 import Spinner from "../../components/ui/Spinner";
 import { Dialog, Transition } from "@headlessui/react";
@@ -29,10 +28,10 @@ import Image from "next/image";
 import { isAuthorized as checkIfModOrAdmin } from "../../utils/isAuthorized";
 import BuildModMenu from "../../components/features/BuildModMenu";
 import StatusBadge from "../../components/ui/StatusBadge";
-import BuildCopyButton from "../../components/features/BuildCopy";
 import { FaArrowsAltH, FaArrowsAltV, FaLink } from "react-icons/fa";
 import { copyToClipboard } from "../../utils/copyToClipboard";
 import Toast from "../../components/ui/Toast";
+import type { ReviewGetOneResult } from "../../types/Reviews";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
@@ -356,7 +355,7 @@ const BuildHeader = ({
               Edit Build
             </button>
           )}
-          {isAuthorized && <BuildModMenu build={build} />}
+          {isAuthorized && <BuildModMenu buildId={build.id} />}
           <button
             onClick={() => {
               copyToClipboard(`${window.location.origin}/builds/${build.id}`);
@@ -455,7 +454,9 @@ const BuildInfo = ({ build }: Omit<PageProps, "user">) => {
   );
 };
 
-const BuildReviews = (props: PageProps & { existingReview: Review | null }) => {
+const BuildReviews = (
+  props: PageProps & { existingReview: ReviewGetOneResult }
+) => {
   const { build, user, existingReview } = props;
 
   const [showReviewForm, setShowReviewForm] = useState(
@@ -494,7 +495,6 @@ const BuildReviews = (props: PageProps & { existingReview: Review | null }) => {
         ) : (
           <Panel>
             <ReviewList
-              build={build}
               reviews={build.reviews}
               setShowReviewForm={setShowReviewForm}
             />
@@ -534,6 +534,24 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       },
       reviews: {
         include: {
+          _count: {
+            select: {
+              likes: true,
+            },
+          },
+          replies: {
+            select: {
+              _count: {
+                select: {
+                  likes: true,
+                },
+              },
+              content: true,
+              author: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
           author: {
             select: {
               id: true,

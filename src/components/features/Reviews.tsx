@@ -1,4 +1,4 @@
-import type { Build, Review, User } from "@prisma/client";
+import type { Build, User } from "@prisma/client";
 import Link from "next/link";
 import { z } from "zod";
 import { trpc } from "../../utils/trpc";
@@ -16,16 +16,20 @@ import {
 import Panel from "../ui/Panel";
 
 import type { BuildWithReviewsAndAuthor } from "../../types/Builds";
-import type { ReviewWithAuthorAndBuild } from "../../types/Reviews";
+import type {
+  ReviewFromBuildGetOneResult,
+  ReviewGetOneResult,
+} from "../../types/Reviews";
+import Image from "next/image";
 
 type ReviewItemProps = {
-  build?: BuildWithReviewsAndAuthor;
-  review: ReviewWithAuthorAndBuild;
+  review: ReviewFromBuildGetOneResult;
   setShowReviewForm?: (show: boolean) => void;
+  build?: BuildWithReviewsAndAuthor;
 };
 
 export const ReviewItem = (props: ReviewItemProps) => {
-  const { build, review, setShowReviewForm } = props;
+  const { review, setShowReviewForm, build } = props;
 
   const { data: session } = useSession();
 
@@ -34,49 +38,110 @@ export const ReviewItem = (props: ReviewItemProps) => {
     setShowReviewForm(true);
   };
 
+  console.log("Review", review);
+
   return (
     <div className="border-b border-neutral-500 pb-4 last:border-b-0 last:pb-0">
-      {review.build && (
+      {build && (
         <div className="mb-2 text-orange-500">
-          <Link href={`/builds/${review.build.id}`}>
-            {build && review.build ? build.title : review.build?.title}
-          </Link>
+          <Link href={`/builds/${build.id}`}>{build.title}</Link>
         </div>
       )}
-      {review.author && (
-        <div className="mb-2 flex items-center justify-between">
-          <UserAvatar user={review.author} showAvatar={true} />
-          {review.authorId === session?.user?.id && (
-            <button className="tertiary w-fit p-0" onClick={handleClickEdit}>
-              Edit
-            </button>
-          )}
+      {!build && review.author && (
+        <div className="flex gap-4">
+          <div className="min-w-[30px]">
+            <Link href={`/${review.author.name}`} className="relative">
+              <Image
+                src={review.author.image as string}
+                className="rounded-full"
+                width={30}
+                height={30}
+                alt={`${review.author.name} Profile Image`}
+              />
+              <div className="absolute -bottom-[5px] -right-[5px] rounded-full bg-white p-[2px] text-xs">
+                {review.isLike ? (
+                  <MdThumbUp className="text-emerald-500" />
+                ) : (
+                  <MdThumbDown className="text-red-500" />
+                )}
+              </div>
+            </Link>
+          </div>
+          <div>
+            <Link
+              href={`/${review.author.name}`}
+              className="font-bold text-neutral-400"
+            >
+              {review.author.name}
+            </Link>
+            <div className="mb-2">{review.content}</div>
+            <div className="mb-4 flex items-center gap-4 text-xs">
+              <div className="flex cursor-pointer items-center gap-2 transition-all hover:text-orange-500">
+                <MdThumbUp className="text-emerald-500" />
+                {review._count.likes > 0 && review._count.likes}
+              </div>
+              <div>{review.createdAt.toISOString().split("T")[0]}</div>
+              {review.authorId === session?.user?.id && (
+                <button
+                  className="tertiary mb-0 w-fit p-0"
+                  onClick={handleClickEdit}
+                >
+                  Edit
+                </button>
+              )}
+              <button className="tertiary w-fit p-0">Reply</button>
+            </div>
+            {review.replies.map((reply, index) => (
+              <div key={`review-${review.id}-reply-${index}`}>
+                <div className="flex gap-2">
+                  <div>
+                    <Link href={`/${reply.author.name}`} className="relative">
+                      <Image
+                        src={reply.author.image as string}
+                        className="mt-1 rounded-full"
+                        width={20}
+                        height={20}
+                        alt={`${reply.author.name} Profile Image`}
+                      />
+                    </Link>
+                  </div>
+                  <div>
+                    <Link
+                      href={`/${reply.author.name}`}
+                      className="font-bold text-neutral-400"
+                    >
+                      {reply.author.name}
+                    </Link>
+                    <div className="mb-2">{reply.content}</div>
+                    <div className="mb-4 flex items-center gap-4 text-xs">
+                      <div className="flex cursor-pointer items-center gap-2 transition-all hover:text-orange-500">
+                        <MdThumbUp className="text-emerald-500" />
+                        {reply._count.likes > 0 && reply._count.likes}
+                      </div>
+                      <div>{reply.createdAt.toISOString().split("T")[0]}</div>
+                      {reply.author.id === session?.user?.id && (
+                        <button
+                          className="tertiary mb-0 w-fit p-0"
+                          onClick={handleClickEdit}
+                        >
+                          Edit
+                        </button>
+                      )}
+                      <button className="tertiary w-fit p-0">Reply</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-      <div className="">
-        <div className="mb-2 flex items-center gap-4">
-          <span className="flex text-orange-500">
-            {review.isLike ? (
-              <MdThumbUp className="text-emerald-500" />
-            ) : (
-              <MdThumbDown className="text-red-500" />
-            )}
-          </span>
-          {new Date(review.createdAt).toDateString()}
-        </div>
-        <div className="mb-2">{review.content}</div>
-        <div className="text-xs italic text-neutral-500">
-          {review.createdAt.toDateString() !== review.updatedAt.toDateString()
-            ? `Last Edited: ${review.updatedAt.toDateString()}`
-            : ""}
-        </div>
-      </div>
     </div>
   );
 };
 
 type ReviewGridProps = {
-  reviews: ReviewWithAuthorAndBuild[];
+  reviews: ReviewFromBuildGetOneResult[];
 };
 
 export const ReviewGrid = (props: ReviewGridProps) => {
@@ -97,7 +162,7 @@ export const ReviewGrid = (props: ReviewGridProps) => {
 
 type ReviewListProps = {
   build?: BuildWithReviewsAndAuthor;
-  reviews: ReviewWithAuthorAndBuild[];
+  reviews: ReviewFromBuildGetOneResult[];
   setShowReviewForm?: (show: boolean) => void;
 };
 
@@ -123,7 +188,7 @@ export const ReviewList = (props: ReviewListProps) => {
 type ReviewFormProps = {
   build: Build;
   setShowReviewForm: (show: boolean) => void;
-  existingReview: Review | null;
+  existingReview: ReviewGetOneResult;
   user:
     | (User & {
         favorites: Build[];
@@ -179,6 +244,10 @@ export const ReviewForm = (props: ReviewFormProps) => {
               updatedAt: new Date(),
               buildId: build.id,
               totalLikes: 0,
+              replies: [],
+              _count: {
+                likes: 0,
+              },
             },
           ],
         };
@@ -216,6 +285,10 @@ export const ReviewForm = (props: ReviewFormProps) => {
               updatedAt: new Date(),
               buildId: build.id,
               totalLikes: existingReview?.totalLikes || 0,
+              replies: [],
+              _count: {
+                likes: existingReview?._count?.likes || 0,
+              },
             },
           ],
         };

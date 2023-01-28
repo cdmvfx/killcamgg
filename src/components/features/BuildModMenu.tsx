@@ -1,16 +1,13 @@
 import { Popover } from "@headlessui/react";
-import React from "react";
-import type { BuildGetOneResult } from "../../types/Builds";
 import { trpc } from "../../utils/trpc";
-import Panel from "../ui/Panel";
 import Spinner from "../ui/Spinner";
 
 type Props = {
-  build: BuildGetOneResult;
+  buildId: string;
 };
 
 const BuildModMenu = (props: Props) => {
-  const { build } = props;
+  const { buildId } = props;
 
   const { mutate: approveBuildMutation, isLoading: approveBuildLoading } =
     trpc.build.approve.useMutation({
@@ -27,13 +24,11 @@ const BuildModMenu = (props: Props) => {
     });
 
   const approveBuild = () => {
-    if (!build) return;
-    approveBuildMutation({ id: build.id });
+    approveBuildMutation({ id: buildId });
   };
 
   const rejectBuild = () => {
-    if (!build) return;
-    rejectBuildMutation({ id: build.id });
+    rejectBuildMutation({ id: buildId });
   };
 
   const isLoading = approveBuildLoading || rejectBuildLoading;

@@ -22,6 +22,13 @@ export const reviewRouter = router({
 							authorId: ctx.session?.user?.id,
 							buildId: input.buildId
 						}
+					},
+					include: {
+						_count: {
+							select: {
+								likes: true
+							}
+						}
 					}
 				})
 			}

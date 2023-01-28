@@ -112,6 +112,24 @@ export const buildRouter = router({
 						},
 						reviews: {
 							include: {
+								_count: {
+									select: {
+										likes: true,
+									}
+								},
+								replies: {
+									select: {
+										_count: {
+											select: {
+												likes: true,
+											}
+										},
+										content: true,
+										author: true,
+										createdAt: true,
+										updatedAt: true
+									}
+								},
 								author: {
 									select: {
 										id: true,
