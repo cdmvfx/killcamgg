@@ -25,7 +25,7 @@ const UserAvatar = ({
           alt={`${user.name} profile picture`}
           width={30}
           height={30}
-          className="rounded-full"
+          className="mr-4 rounded-full"
         />
       )}
       {showName && (

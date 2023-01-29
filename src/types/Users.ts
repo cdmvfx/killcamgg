@@ -6,6 +6,8 @@ type RouterOutput = inferRouterOutputs<AppRouter>;
 
 export type UserGetProfileDataResult = RouterOutput['user']['getProfileData'];
 
+export type UserGetOneResult = RouterOutput['user']['getOne'];
+
 export type UserWithFavorites = User & {
 	favorites: Build[];
 }

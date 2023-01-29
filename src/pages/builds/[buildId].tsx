@@ -2,10 +2,9 @@ import Link from "next/link";
 import Heading from "../../components/ui/Heading";
 import Panel from "../../components/ui/Panel";
 import UserAvatar from "../../components/ui/UserAvatar";
-import { ReviewForm, ReviewList } from "../../components/features/Reviews";
+import { ReviewList } from "../../components/features/Reviews";
 import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
-import { prisma } from "../../server/db/client";
 import { trpc } from "../../utils/trpc";
 import React, { useState } from "react";
 import BuildForm from "../../components/features/BuildForm";
@@ -31,12 +30,15 @@ import StatusBadge from "../../components/ui/StatusBadge";
 import { FaArrowsAltH, FaArrowsAltV, FaLink } from "react-icons/fa";
 import { copyToClipboard } from "../../utils/copyToClipboard";
 import Toast from "../../components/ui/Toast";
-import type { ReviewGetOneResult } from "../../types/Reviews";
+import type { ReviewFromBuildGetOneResult } from "../../types/Reviews";
+import { appRouter } from "../../server/trpc/router/_app";
+import { createContextServerSideProps } from "../../server/trpc/context";
+import { ReviewForm } from "../../components/features/reviews/ReviewForm";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
 const BuildPage: NextPage<PageProps> = (props) => {
-  const { build: initialBuildData, user: initialUserData } = props;
+  const { build: initialBuildData, sessionUser } = props;
 
   const [showBuildForm, setShowBuildForm] = useState(false);
 
@@ -47,78 +49,69 @@ const BuildPage: NextPage<PageProps> = (props) => {
   const { data: build, refetch: refetchBuildData } = trpc.build.getOne.useQuery(
     { id: initialBuildData.id },
     {
+      enabled: false,
       initialData: initialBuildData,
     }
   );
 
   if (!build) return <div>Build Not Found!</div>;
 
-  const { data: user, refetch: refetchUserData } = trpc.user.getOne.useQuery(
-    { id: initialUserData ? initialUserData.id : null },
-    {
-      enabled: false,
-      initialData: initialUserData,
-    }
-  );
-
-  if (user === undefined) return <div>Loading user...</div>;
-
-  const { data: existingReview } = trpc.review.getOne.useQuery({
-    buildId: build.id,
-  });
-
   const { mutate: toggleFavoriteMutation } =
-    trpc.user.toggleFavorite.useMutation({
+    trpc.build.toggleFavorite.useMutation({
       onMutate: async (input) => {
-        if (!user) return;
-        await utils.user.getOne.cancel();
-        const previousUser = utils.user.getOne.getData({ id: user.id });
-        utils.user.getOne.setData({ id: user.id }, (oldUser) => {
-          if (!oldUser) return null;
+        await utils.build.getOne.cancel();
+        const previousBuild = utils.build.getOne.getData({ id: build.id });
 
-          if (
-            oldUser.favorites.some((favorite) => favorite.id === input.buildId)
-          ) {
+        utils.build.getOne.setData({ id: build.id }, (oldBuild) => {
+          if (!oldBuild) return null;
+          if (!sessionUser) return;
+
+          if (!input.status) {
             return {
-              ...oldUser,
-              favorites: oldUser.favorites.filter(
-                (favorite) => favorite.id !== input.buildId
+              ...oldBuild,
+              favorites: oldBuild.favorites.filter(
+                (favorite) => favorite.id !== sessionUser.id
               ),
             };
-          } else {
-            return {
-              ...oldUser,
-              favorites: [...oldUser.favorites, build],
-            };
           }
+
+          return {
+            ...oldBuild,
+            favorites: [...oldBuild.favorites, { id: sessionUser.id }],
+          };
         });
-        return { previousUser };
+        return { previousBuild };
       },
       onSettled: async () => {
-        if (!user) return;
-        console.log("invalidating user");
-        refetchUserData();
+        if (!sessionUser) return;
+        refetchBuildData();
       },
       onError: async (err, input, context) => {
-        console.log("Error favoriting build.", err);
-        utils.user.getOne.setData(
-          { id: user?.id as string },
-          context?.previousUser
+        utils.build.getOne.setData(
+          { id: build.id as string },
+          context?.previousBuild
         );
       },
     });
 
-  const changeFavorite = async () => {
-    toggleFavoriteMutation({
-      buildId: build.id,
-    });
-  };
+  const existingReview = sessionUser
+    ? build.reviews.find((review) => review.author.id === sessionUser.id) ||
+      null
+    : null;
 
-  const isFavorited = user
-    ? user.favorites.some((favorite) => favorite.id === build.id)
+  const isFavorited = sessionUser
+    ? build.favorites.some((favorite) => favorite.id === sessionUser.id) ||
+      false
     : false;
 
   const isLiked = existingReview ? existingReview.isLike : null;
+
+  const changeFavorite = async () => {
+    toggleFavoriteMutation({
+      buildId: build.id,
+      status: !isFavorited,
+    });
+  };
 
   return (
     <div>
@@ -131,7 +124,7 @@ const BuildPage: NextPage<PageProps> = (props) => {
       {build && (
         <div className="flex flex-col gap-4 md:gap-8 md:p-4">
           <BuildHeader
-            user={user}
+            sessionUser={sessionUser}
             build={build}
             isFavorited={isFavorited}
             changeFavorite={changeFavorite}
@@ -149,7 +142,7 @@ const BuildPage: NextPage<PageProps> = (props) => {
           ) : (
             <BuildReviews
               build={build}
-              user={user}
+              sessionUser={sessionUser}
               existingReview={existingReview}
             />
           )}
@@ -200,7 +193,7 @@ const BuildPage: NextPage<PageProps> = (props) => {
 };
 
 const BuildHeader = ({
-  user,
+  sessionUser,
   build,
   isFavorited,
   changeFavorite,
@@ -208,6 +201,7 @@ const BuildHeader = ({
   setShowBuildForm,
   isLiked,
   setIsCopyBuildToastOpen,
+  refetchBuildData,
 }: PageProps & {
   isFavorited: boolean;
   changeFavorite: () => void;
@@ -222,40 +216,25 @@ const BuildHeader = ({
 
   const { mutate: toggleLikeMutation } = trpc.review.changeLike.useMutation({
     onMutate: async (input) => {
-      await utils.review.getOne.cancel();
-      const previousReview = utils.review.getOne.getData({
-        buildId: input.buildId,
+      await utils.build.getOne.cancel();
+      const previousBuild = utils.build.getOne.getData({
+        id: input.buildId,
       });
-      utils.review.getOne.setData({ buildId: input.buildId }, (oldReview) => {
-        if (!oldReview) return null;
-        return {
-          ...oldReview,
-          isLike: input.isLike,
-        };
-      });
-      return { previousReview };
+      return { previousBuild };
     },
     onSettled: async () => {
-      console.log("settled. invalidating review.");
-      utils.review.getOne.invalidate({ buildId: build.id });
-      utils.build.getOne.invalidate({ id: build.id });
+      refetchBuildData();
     },
     onError: async (err, input, context) => {
-      console.log("Error changing like.", err);
-      utils.review.getOne.setData(
-        { buildId: input.buildId },
-        context?.previousReview
-      );
+      utils.build.getOne.setData({ id: input.buildId }, context?.previousBuild);
     },
   });
 
   const handleToggleLike = (status: boolean) => {
-    console.log("isLike", isLiked, "status", status);
     if (
       (isLiked === true && status === true) ||
       (isLiked === false && status === false)
     ) {
-      console.log("here");
       toggleLikeMutation({
         buildId: build.id,
         isLike: null,
@@ -268,15 +247,32 @@ const BuildHeader = ({
     });
   };
 
-  const isAuthorized = checkIfModOrAdmin(user);
+  const isAuthorized = checkIfModOrAdmin(sessionUser);
+
+  const numLikes = build.reviews.filter(
+    (review) => review.isLike === true
+  ).length;
+  const numDislikes = build.reviews.length - numLikes;
 
   return (
     <section className="flex flex-col justify-between bg-black bg-opacity-50 md:flex-row md:rounded-lg">
       <div className="flex flex-col justify-center gap-4 p-4 md:basis-1/2 md:p-8">
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-col gap-4">
+            <div className="text-center">
+              <div className="flex items-center text-4xl lg:text-6xl">
+                <span className="text-orange-500">
+                  <IoMdStar />
+                </span>{" "}
+                {averageRating.toFixed(1) || "0.0"}
+              </div>
+            </div>
             <h1 className="mb-0 flex gap-4">{build.title}</h1>
-            <div>{isAuthorized && <StatusBadge status={build.status} />}</div>
+            {isAuthorized && (
+              <div>
+                <StatusBadge status={build.status} />
+              </div>
+            )}
             <div className="w-fit">
               <UserAvatar user={build.author} showAvatar={true} />
             </div>
@@ -299,55 +295,45 @@ const BuildHeader = ({
               </div>
             </div>
             <div className="flex w-full items-center gap-4">
-              {user && build.authorId === user.id ? (
+              {sessionUser && build.authorId === sessionUser.id ? (
                 ""
               ) : (
                 <>
                   <div className="flex-grow">
-                    <div className="flex cursor-pointer text-4xl text-orange-400">
+                    <div className="grid cursor-pointer grid-cols-3 text-4xl text-orange-400">
                       <div
-                        className="p-2 text-emerald-500"
+                        className="flex gap-2 p-2 text-emerald-500"
                         onClick={() => handleToggleLike(true)}
                       >
-                        {isLiked === true ? <MdThumbUp /> : <MdThumbUpOffAlt />}
+                        {isLiked === true ? <MdThumbUp /> : <MdThumbUpOffAlt />}{" "}
+                        {numLikes}
                       </div>
                       <div
-                        className="p-2 text-red-500"
+                        className="flex gap-2 p-2 text-red-500"
                         onClick={() => handleToggleLike(false)}
                       >
                         {isLiked === false ? (
                           <MdThumbDown />
                         ) : (
                           <MdThumbDownOffAlt />
-                        )}
+                        )}{" "}
+                        {numDislikes}
+                      </div>
+                      <div
+                        className="cursor-pointer p-2 text-red-500"
+                        onClick={changeFavorite}
+                      >
+                        {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
                       </div>
                     </div>
-                  </div>
-                  <div
-                    className="cursor-pointer text-4xl text-red-500"
-                    onClick={changeFavorite}
-                  >
-                    {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
                   </div>
                 </>
               )}
             </div>
           </div>
-          <div className="text-center">
-            <div className="flex items-center text-4xl lg:text-6xl">
-              <span className="text-orange-500">
-                <IoMdStar />
-              </span>{" "}
-              {averageRating.toFixed(1) || "0.0"}
-            </div>
-            <div className="text-md lg:text-xl">
-              {build.reviews.length + " "}
-              {build.reviews.length === 1 ? "vote" : "votes"}
-            </div>
-          </div>
         </div>
         <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap">
-          {user && user.id === build.authorId && (
+          {sessionUser && sessionUser.id === build.authorId && (
             <button
               className="mb-0 w-full md:w-48"
               onClick={() => setShowBuildForm(true)}
@@ -385,7 +371,7 @@ const BuildHeader = ({
   );
 };
 
-const BuildInfo = ({ build }: Omit<PageProps, "user">) => {
+const BuildInfo = ({ build }: Omit<PageProps, "sessionUser">) => {
   return (
     <section className="p-4 md:p-0">
       <Heading>Build Information</Heading>
@@ -455,22 +441,20 @@ const BuildInfo = ({ build }: Omit<PageProps, "user">) => {
 };
 
 const BuildReviews = (
-  props: PageProps & { existingReview: ReviewGetOneResult }
+  props: PageProps & { existingReview: ReviewFromBuildGetOneResult | null }
 ) => {
-  const { build, user, existingReview } = props;
+  const { build, sessionUser, existingReview } = props;
 
   const [showReviewForm, setShowReviewForm] = useState(
     existingReview ? false : true
   );
-
-  console.log("Build Reviews Existing", existingReview, showReviewForm);
 
   return (
     <section className="p-4 md:p-0">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col md:flex-row md:justify-between">
           <Heading>Reviews</Heading>
-          {!user && (
+          {!sessionUser && (
             <Link href="/signin">
               <button className="mb-0 w-full md:w-fit">
                 Sign in to review this build!
@@ -478,13 +462,13 @@ const BuildReviews = (
             </Link>
           )}
         </div>
-        {user && build.authorId !== user.id && showReviewForm && (
+        {sessionUser && build.authorId !== sessionUser.id && showReviewForm && (
           <Panel>
             <ReviewForm
               build={build}
               setShowReviewForm={setShowReviewForm}
               existingReview={existingReview}
-              user={user}
+              sessionUser={sessionUser}
             />
           </Panel>
         )}
@@ -495,6 +479,7 @@ const BuildReviews = (
         ) : (
           <Panel>
             <ReviewList
+              sessionUser={sessionUser}
               reviews={build.reviews}
               setShowReviewForm={setShowReviewForm}
             />
@@ -516,53 +501,11 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     };
   }
 
-  const build = await prisma.build.findUnique({
-    where: { id: ctx.params.buildId },
-    include: {
-      weapon: true,
-      attachmentSetups: {
-        include: {
-          attachment: true,
-        },
-      },
-      author: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-        },
-      },
-      reviews: {
-        include: {
-          _count: {
-            select: {
-              likes: true,
-            },
-          },
-          replies: {
-            select: {
-              _count: {
-                select: {
-                  likes: true,
-                },
-              },
-              content: true,
-              author: true,
-              createdAt: true,
-              updatedAt: true,
-            },
-          },
-          author: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  const trpcContext = await createContextServerSideProps(ctx);
+
+  const caller = appRouter.createCaller(trpcContext);
+
+  const build = await caller.build.getOne({ id: ctx.params.buildId });
 
   if (!build) {
     return {
@@ -572,19 +515,13 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
   const session = await getServerAuthSession(ctx);
 
-  const user = session
-    ? await prisma.user.findFirst({
-        where: {
-          id: session.user?.id,
-        },
-        include: {
-          favorites: true,
-        },
-      })
-    : null;
+  const sessionUser = session?.user || null;
 
   return {
-    props: { build, user },
+    props: {
+      build,
+      sessionUser,
+    },
   };
 };
 

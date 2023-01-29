@@ -1,5 +1,5 @@
 import type { Build, Review } from "@prisma/client";
-import { RouterOutputs } from "../utils/trpc";
+import type { RouterOutputs } from "../utils/trpc";
 import type { BuildGetOneResult } from "./Builds";
 
 export type ReviewGetOneResult = RouterOutputs['review']['getOne'];
@@ -15,3 +15,5 @@ export type ReviewWithAuthorAndBuild = Review & {
 };
 
 export type ReviewFromBuildGetOneResult = NonNullable<BuildGetOneResult>["reviews"][number]
+
+export type ReplyFromBuildGetOneResult = ReviewFromBuildGetOneResult["replies"][number]
