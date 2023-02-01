@@ -46,11 +46,12 @@ const BuildPage: NextPage<PageProps> = (props) => {
 
   const utils = trpc.useContext();
 
-  const { data: build, refetch: refetchBuildData } = trpc.build.getOne.useQuery(
+  const { data: build } = trpc.build.getOne.useQuery(
     { id: initialBuildData.id },
     {
-      enabled: false,
       initialData: initialBuildData,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
     }
   );
 
@@ -84,7 +85,7 @@ const BuildPage: NextPage<PageProps> = (props) => {
       },
       onSettled: async () => {
         if (!sessionUser) return;
-        refetchBuildData();
+        utils.build.getOne.invalidate({ id: build.id });
       },
       onError: async (err, input, context) => {
         utils.build.getOne.setData(
@@ -132,7 +133,6 @@ const BuildPage: NextPage<PageProps> = (props) => {
             showBuildForm={showBuildForm}
             setShowBuildForm={setShowBuildForm}
             isLiked={isLiked}
-            refetchBuildData={refetchBuildData}
             setIsCopyBuildToastOpen={setIsCopyBuildToastOpen}
           />
 
@@ -201,7 +201,6 @@ const BuildHeader = ({
   setShowBuildForm,
   isLiked,
   setIsCopyBuildToastOpen,
-  refetchBuildData,
 }: PageProps & {
   isFavorited: boolean;
   changeFavorite: () => void;
@@ -209,7 +208,6 @@ const BuildHeader = ({
   showBuildForm: boolean;
   setShowBuildForm: Dispatch<SetStateAction<boolean>>;
   isLiked: boolean | null;
-  refetchBuildData: () => void;
   setIsCopyBuildToastOpen: Dispatch<SetStateAction<boolean>>;
 }) => {
   const utils = trpc.useContext();
@@ -223,7 +221,7 @@ const BuildHeader = ({
       return { previousBuild };
     },
     onSettled: async () => {
-      refetchBuildData();
+      utils.build.getOne.invalidate({ id: build.id });
     },
     onError: async (err, input, context) => {
       utils.build.getOne.setData({ id: input.buildId }, context?.previousBuild);
@@ -441,7 +439,9 @@ const BuildInfo = ({ build }: Omit<PageProps, "sessionUser">) => {
 };
 
 const BuildReviews = (
-  props: PageProps & { existingReview: ReviewFromBuildGetOneResult | null }
+  props: PageProps & {
+    existingReview: ReviewFromBuildGetOneResult | null;
+  }
 ) => {
   const { build, sessionUser, existingReview } = props;
 
@@ -481,6 +481,7 @@ const BuildReviews = (
             <ReviewList
               sessionUser={sessionUser}
               reviews={build.reviews}
+              buildId={build.id}
               setShowReviewForm={setShowReviewForm}
             />
           </Panel>

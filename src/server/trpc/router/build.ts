@@ -133,6 +133,15 @@ export const buildRouter = router({
 												image: true,
 											},
 										},
+										reply: {
+											select: {
+												author: {
+													select: {
+														name: true
+													}
+												}
+											}
+										},
 										createdAt: true,
 										updatedAt: true,
 										likes: {

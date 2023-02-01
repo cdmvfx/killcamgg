@@ -1,7 +1,7 @@
 import type { Build } from "@prisma/client";
 import { z } from "zod";
 import { trpc } from "../../../utils/trpc";
-import { useState } from "react";
+import React, { useState } from "react";
 import Alert from "../../ui/Alert";
 import Spinner from "../../ui/Spinner";
 import {
@@ -13,6 +13,7 @@ import {
 
 import type { ReviewFromBuildGetOneResult } from "../../../types/Reviews";
 import type { Session } from "next-auth";
+import { Dialog, Transition } from "@headlessui/react";
 
 type ReviewFormProps = {
   build: Build;
@@ -22,7 +23,7 @@ type ReviewFormProps = {
 };
 
 export const ReviewForm = (props: ReviewFormProps) => {
-  const { setShowReviewForm, build, existingReview, sessionUser } = props;
+  const { setShowReviewForm, build, existingReview } = props;
 
   type FormErrors = {
     isLike: string[];
@@ -48,39 +49,8 @@ export const ReviewForm = (props: ReviewFormProps) => {
 
   const postReview = trpc.review.post.useMutation({
     onSuccess: async () => {
-      utils.build.getOne.setData({ id: build.id }, (old) => {
-        if (!old) return;
-        if (isLike === null) return;
-        return {
-          ...old,
-          reviews: [
-            ...old.reviews,
-            {
-              id: "temp",
-              author: {
-                id: sessionUser.id || "temp",
-                name: sessionUser.name || "temp",
-                image: sessionUser.image || "temp",
-              },
-              authorId: sessionUser.id || "temp",
-              isLike: isLike,
-              content: content,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              buildId: build.id,
-              likes: [],
-              totalLikes: 0,
-              replies: [],
-              _count: {
-                likes: 0,
-              },
-            },
-          ],
-        };
-      });
       setShowReviewForm(false);
       utils.build.getOne.invalidate({ id: build.id });
-      utils.review.getOne.invalidate({ buildId: build.id });
     },
     onError: async (error) => {
       setErrors({ isLike: [], content: [], general: [error.message] });
@@ -89,37 +59,8 @@ export const ReviewForm = (props: ReviewFormProps) => {
 
   const editReview = trpc.review.edit.useMutation({
     onSuccess: async () => {
-      utils.build.getOne.setData({ id: build.id }, (old) => {
-        if (!old) return;
-        if (isLike === null) return;
-        return {
-          ...old,
-          reviews: [
-            ...old.reviews.filter((review) => review.id !== existingReview?.id),
-
-            {
-              id: existingReview?.id || "temp",
-              author: {
-                id: sessionUser.id || "temp",
-                name: sessionUser.name || "temp",
-                image: sessionUser.image || "temp",
-              },
-              authorId: existingReview?.authorId || "temp",
-              isLike: isLike,
-              content: content,
-              likes: [],
-              createdAt: existingReview?.createdAt || new Date(),
-              updatedAt: new Date(),
-              buildId: build.id,
-              totalLikes: existingReview?.totalLikes || 0,
-              replies: [],
-            },
-          ],
-        };
-      });
       setShowReviewForm(false);
       utils.build.getOne.invalidate({ id: build.id });
-      utils.review.getOne.invalidate({ buildId: build.id });
     },
     onError: async (error) => {
       setErrors({ isLike: [], content: [], general: [error.message] });
@@ -128,21 +69,11 @@ export const ReviewForm = (props: ReviewFormProps) => {
 
   const deleteReviewMutation = trpc.review.delete.useMutation({
     onSuccess: async () => {
-      utils.build.getOne.setData({ id: build.id }, (old) => {
-        if (!old) return;
-        return {
-          ...old,
-          reviews: [
-            ...old.reviews.filter((review) => review.id !== existingReview?.id),
-          ],
-        };
-      });
       setShowDeleteModal(false);
       setShowReviewForm(true);
       setIsLike(null);
       setContent("");
       utils.build.getOne.invalidate({ id: build.id });
-      utils.review.getOne.invalidate({ buildId: build.id });
     },
     onError: async (error) => {
       setErrors({ isLike: [], content: [], general: [error.message] });
@@ -246,51 +177,86 @@ export const ReviewForm = (props: ReviewFormProps) => {
           <Alert key={`review-error-${index}`} status="error" message={error} />
         ))}
       </div>
-      {!showDeleteModal && (
-        <div>
-          {postReview.isLoading || editReview.isLoading ? (
-            <Spinner />
-          ) : (
-            <>
-              <button className="" onClick={handleSubmitClick}>
-                {existingReview ? "Save Review" : "Post Review"}
-              </button>
-              {existingReview && (
-                <>
-                  <button className="secondary" onClick={handleDeleteClick}>
-                    Delete Review
-                  </button>
-                  <button className="tertiary" onClick={handleCancelClick}>
-                    Cancel
-                  </button>
-                </>
-              )}
-            </>
-          )}
-        </div>
-      )}
-      {showDeleteModal && (
-        <div>
-          <div className="mb-2">
-            Are you sure you want to delete your review?
+      <div>
+        {postReview.isLoading || editReview.isLoading ? (
+          <Spinner />
+        ) : (
+          <div className="flex justify-end gap-4">
+            <button className="mb-0" onClick={handleSubmitClick}>
+              {existingReview ? "Save Review" : "Post Review"}
+            </button>
+            {existingReview && (
+              <>
+                <button className="secondary mb-0" onClick={handleDeleteClick}>
+                  Delete Review
+                </button>
+                <button className="tertiary" onClick={handleCancelClick}>
+                  Cancel
+                </button>
+              </>
+            )}
           </div>
-          {deleteReviewMutation.isLoading ? (
-            <Spinner />
-          ) : (
-            <>
-              <button className="w-full" onClick={handleDeleteFinal}>
-                Delete
-              </button>
-              <button
-                className="secondary mt-2 w-full"
-                onClick={handleDeleteCancel}
+        )}
+      </div>
+      <Transition appear show={showDeleteModal} as={React.Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setShowDeleteModal(false)}
+        >
+          <Transition.Child
+            as={React.Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-50" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 flex items-center justify-center overflow-y-auto">
+            <div className="flex items-center justify-center md:p-4">
+              <Transition.Child
+                as={React.Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
               >
-                Cancel
-              </button>
-            </>
-          )}
-        </div>
-      )}
+                <Dialog.Panel className="min-h-full w-full max-w-lg transform overflow-hidden bg-[#274b48] p-4 text-left align-middle shadow-xl transition-all md:rounded-2xl">
+                  <div>
+                    <div className="mb-4">
+                      <Alert
+                        status="error"
+                        message="Are you sure you want to delete your review? This action cannot be undone."
+                      />
+                    </div>
+                    {deleteReviewMutation.isLoading ? (
+                      <Spinner />
+                    ) : (
+                      <>
+                        <button className="w-full" onClick={handleDeleteFinal}>
+                          Delete
+                        </button>
+                        <button
+                          className="secondary w-full"
+                          onClick={handleDeleteCancel}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
       {errors.general?.map((error, index) => (
         <Alert
           key={`submission-error-${index}`}

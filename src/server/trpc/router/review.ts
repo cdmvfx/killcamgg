@@ -217,6 +217,40 @@ export const reviewRouter = router({
 				console.log('Error calculating new average rating in review.postReview: ', error);
 			}
 		}),
+	like: protectedProcedure
+		.input(
+			z.object({
+				reviewId: z.string(),
+				status: z.boolean()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				if (input.status) {
+					await ctx.prisma.review.update({
+						where: { id: input.reviewId },
+						data: {
+							likes: {
+								connect: [{ id: ctx.session.user.id }]
+							}
+						}
+					})
+				}
+				else {
+					await ctx.prisma.review.update({
+						where: { id: input.reviewId },
+						data: {
+							likes: {
+								disconnect: [{ id: ctx.session.user.id }]
+							}
+						}
+					})
+				}
+			}
+			catch (e) {
+				console.log(e);
+			}
+		}),
 	changeLike: protectedProcedure
 		.input(
 			z.object({

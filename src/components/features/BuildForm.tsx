@@ -117,8 +117,6 @@ const BuildForm = (props: BuildFormProps) => {
 
   const [success, setSuccess] = useState(false);
 
-  console.log("Selected attachments", selectedAttachments);
-
   const addAttachment = () => {
     if (numOfAttachments >= 5) return;
     setNumOfAttachments((current) => current + 1);
