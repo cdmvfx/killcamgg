@@ -247,10 +247,16 @@ const BuildHeader = ({
 
   const isAuthorized = checkIfModOrAdmin(sessionUser);
 
-  const numLikes = build.reviews.filter(
-    (review) => review.isLike === true
-  ).length;
-  const numDislikes = build.reviews.length - numLikes;
+  let numLikes = 0;
+  let numDislikes = 0;
+
+  for (const review of build.reviews) {
+    if (review.isLike === true) {
+      numLikes++;
+    } else if (review.isLike === false) {
+      numDislikes++;
+    }
+  }
 
   return (
     <section className="flex flex-col justify-between bg-black bg-opacity-50 md:flex-row md:rounded-lg">
@@ -446,7 +452,13 @@ const BuildReviews = (
   const { build, sessionUser, existingReview } = props;
 
   const [showReviewForm, setShowReviewForm] = useState(
-    existingReview ? false : true
+    existingReview && existingReview.content && !existingReview.deletedAt
+      ? false
+      : true
+  );
+
+  const validReviews = build.reviews.filter(
+    (review) => review.content !== null && !review.deletedAt
   );
 
   return (
@@ -472,7 +484,7 @@ const BuildReviews = (
             />
           </Panel>
         )}
-        {!build.reviews.length ? (
+        {!validReviews.length ? (
           <Panel>
             <div className="text-center">No reviews yet!</div>
           </Panel>
@@ -480,7 +492,7 @@ const BuildReviews = (
           <Panel>
             <ReviewList
               sessionUser={sessionUser}
-              reviews={build.reviews}
+              reviews={validReviews}
               buildId={build.id}
               setShowReviewForm={setShowReviewForm}
             />

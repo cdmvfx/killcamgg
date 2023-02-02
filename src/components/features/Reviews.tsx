@@ -3,14 +3,11 @@ import { MdThumbUpOffAlt, MdThumbDown, MdThumbUp } from "react-icons/md";
 import Panel from "../ui/Panel";
 import type { Dispatch, SetStateAction } from "react";
 import React from "react";
-
-import type { BuildWithReviewsAndAuthor } from "../../types/Builds";
 import type {
   ReplyFromBuildGetOneResult,
   ReviewFromBuildGetOneResult,
 } from "../../types/Reviews";
 import Image from "next/image";
-import type { UserGetOneResult } from "../../types/Users";
 import type { Session } from "next-auth";
 import { useState } from "react";
 import { trpc } from "../../utils/trpc";
@@ -18,24 +15,54 @@ import { z } from "zod";
 import { Dialog, Transition } from "@headlessui/react";
 import Alert from "../ui/Alert";
 import Spinner from "../ui/Spinner";
+import Toast from "../ui/Toast";
+import type { ReviewFromUserGetProfileDataResult } from "../../types/Users";
 
 type ReviewGridProps = {
-  reviews: ReviewFromBuildGetOneResult[];
-  sessionUser: NonNullable<Session["user"]> | null;
+  reviews: ReviewFromUserGetProfileDataResult[];
 };
 
 export const ReviewGrid = (props: ReviewGridProps) => {
-  const { reviews, sessionUser } = props;
+  const { reviews } = props;
 
   return (
     <div className="flex w-full flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3">
       {reviews.map((review) => {
         return (
           <Panel key={`review-${review.id}`}>
-            {/* <ReviewItem review={review} sessionUser={sessionUser} /> */}
+            <ReviewGridItem review={review} />
           </Panel>
         );
       })}
+    </div>
+  );
+};
+
+type ReviewGridItemProps = {
+  review: ReviewFromUserGetProfileDataResult;
+};
+
+const ReviewGridItem = (props: ReviewGridItemProps) => {
+  const { review } = props;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div>
+        <Link
+          className="text-orange-500 transition-all hover:text-orange-400"
+          href={`/builds/${review.buildId}`}
+        >
+          {review.build.title}
+        </Link>
+      </div>
+      <div>
+        {review.isLike === true && <MdThumbUp className="text-emerald-500" />}
+        {review.isLike === false && <MdThumbDown className="text-red-500" />}
+        {review.updatedAt.getTime() > review.createdAt.getTime()
+          ? review.updatedAt.toISOString().slice(0, 10)
+          : review.createdAt.toISOString().slice(0, 10)}
+      </div>
+      <div>{review.content}</div>
     </div>
   );
 };
@@ -173,13 +200,15 @@ export const ReviewItem = (props: ReviewItemProps) => {
               height={30}
               alt={`${review.author.name} Profile Image`}
             />
-            <div className="absolute -bottom-[5px] -right-[5px] rounded-full bg-white p-[2px] text-xs">
-              {review.isLike ? (
-                <MdThumbUp className="text-emerald-500" />
-              ) : (
-                <MdThumbDown className="text-red-500" />
-              )}
-            </div>
+            {review.isLike !== null && (
+              <div className="absolute -bottom-[5px] -right-[5px] rounded-full bg-white p-[2px] text-xs">
+                {review.isLike ? (
+                  <MdThumbUp className="text-emerald-500" />
+                ) : (
+                  <MdThumbDown className="text-red-500" />
+                )}
+              </div>
+            )}
           </Link>
         </div>
         <div>
@@ -280,7 +309,7 @@ const ReplyItem = ({
 }) => {
   const [isReplyFormOpen, setIsReplyFormOpen] = useState(false);
 
-  if (!reply) return <></>;
+  if (!reply || reply.deletedAt) return <></>;
 
   const isLiked = sessionUser
     ? reply.likes.some((like) => {
@@ -295,7 +324,11 @@ const ReplyItem = ({
         <div>
           <Link href={`/${reply.author.name}`} className="relative">
             <Image
-              src={reply.author.image as string}
+              src={
+                reply.deletedAt
+                  ? "/favicon.ico"
+                  : (reply.author.image as string)
+              }
               className="mt-1 rounded-full"
               width={20}
               height={20}
@@ -379,6 +412,8 @@ const ReplyForm = (props: ReplyFormProps) => {
 
   const [content, setContent] = useState("");
 
+  const [showError, setShowError] = useState(false);
+
   const utils = trpc.useContext();
 
   const { mutate } = trpc.reply.post.useMutation({
@@ -393,6 +428,9 @@ const ReplyForm = (props: ReplyFormProps) => {
     const replySchema = z.object({
       content: z
         .string()
+        .min(10, {
+          message: "Reply must be more than 10 characters.",
+        })
         .max(100, { message: "Reply must be less than 100 characters." }),
     });
 
@@ -400,7 +438,7 @@ const ReplyForm = (props: ReplyFormProps) => {
       replySchema.parse({ content });
       mutate({ content, reviewId, replyId });
     } catch (e) {
-      console.log(e);
+      setShowError(true);
     }
   };
 
@@ -410,19 +448,28 @@ const ReplyForm = (props: ReplyFormProps) => {
   };
 
   return (
-    <div className="mb-4 flex items-center gap-4">
+    <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
+      <Toast
+        isVisible={showError}
+        setIsVisible={setShowError}
+        message="Reply must be less than 100 characters."
+        status="error"
+      />
       <label>Reply to {authorName}</label>
       <input
         type="text"
         value={content}
+        className="w-full"
         onChange={(e) => setContent(e.target.value)}
       />
-      <button className="mb-0 border-0" onClick={sendReply}>
-        Send
-      </button>
-      <button className="tertiary" onClick={closeReplyForm}>
-        Cancel
-      </button>
+      <div className="gap-4 md:flex">
+        <button className="mb-0 w-fit border-0" onClick={sendReply}>
+          Send
+        </button>
+        <button className="tertiary w-fit" onClick={closeReplyForm}>
+          Cancel
+        </button>
+      </div>
     </div>
   );
 };

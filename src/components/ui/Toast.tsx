@@ -19,33 +19,33 @@ const Toast = (props: Props) => {
 
   switch (status) {
     case "success":
-      toastStyles += " bg-emerald-500";
+      toastStyles += " bg-emerald-600";
       break;
     case "error":
-      toastStyles += " bg-red-500";
+      toastStyles += " bg-red-600";
       break;
     case "info":
-      toastStyles += " bg-blue-500";
+      toastStyles += " bg-blue-600";
       break;
     case "warning":
-      toastStyles += " bg-yellow-500";
+      toastStyles += " bg-yellow-600";
       break;
     default:
-      toastStyles += " bg-emerald-500";
+      toastStyles += " bg-emerald-600";
   }
 
   useEffect(() => {
     if (isVisible) {
       setTimeout(() => {
         setIsVisible(false);
-      }, 2000);
+      }, 3000);
     }
   }, [isVisible, setIsVisible]);
 
   return (
     <div
-      className={`clbh9qbe40007j52szbma5k9b fixed -bottom-full left-0 flex w-full items-center justify-center text-center text-xl text-white transition-all ${
-        isVisible ? toastStylesActive : ""
+      className={`fixed left-0 flex w-full items-center justify-center text-center text-xl text-white transition-all ${
+        isVisible ? toastStylesActive : "-bottom-full"
       }`}
     >
       <div

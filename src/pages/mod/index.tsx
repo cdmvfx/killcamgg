@@ -69,7 +69,7 @@ const ModPage = () => {
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const session = await getServerAuthSession(ctx);
-  const authorized = isAuthorized(session?.user);
+  const authorized = isAuthorized(session?.user || null);
 
   if (!authorized) {
     return {

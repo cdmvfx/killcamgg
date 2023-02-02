@@ -32,11 +32,15 @@ export const ReviewForm = (props: ReviewFormProps) => {
   };
 
   const [isLike, setIsLike] = useState(
-    existingReview ? existingReview.isLike : null
+    existingReview && existingReview.isLike !== null
+      ? existingReview.isLike
+      : null
   );
+
   const [content, setContent] = useState(
     existingReview && existingReview.content ? existingReview.content : ""
   );
+
   const [errors, setErrors] = useState<FormErrors>({
     isLike: [],
     content: [],
@@ -71,8 +75,6 @@ export const ReviewForm = (props: ReviewFormProps) => {
     onSuccess: async () => {
       setShowDeleteModal(false);
       setShowReviewForm(true);
-      setIsLike(null);
-      setContent("");
       utils.build.getOne.invalidate({ id: build.id });
     },
     onError: async (error) => {
@@ -88,28 +90,41 @@ export const ReviewForm = (props: ReviewFormProps) => {
     });
 
     const reviewSchema = z.object({
-      isLike: z.boolean(),
-      content: z.string().max(500, {
-        message: "Review must be at most 500 characters long",
-      }),
+      isLike: z
+        .boolean({
+          invalid_type_error: "You must select a rating",
+        })
+        .nullable(),
+      content: z
+        .string()
+        .min(30, {
+          message: "Review must be at least 30 characters long",
+        })
+        .max(500, {
+          message: "Review must be at most 500 characters long",
+        }),
     });
 
     try {
-      reviewSchema.parse({ isLike, content });
+      reviewSchema.parse({
+        isLike,
+        content,
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.log(error.flatten().fieldErrors);
         setErrors(error.flatten().fieldErrors as FormErrors);
       }
       return;
     }
 
-    if (isLike === null) return;
+    const parsedContent = content.trim().length > 0 ? content.trim() : null;
 
     if (existingReview) {
       editReview.mutate({
         buildId: existingReview.buildId,
         isLike,
-        content,
+        content: parsedContent,
       });
       return;
     }
@@ -117,7 +132,7 @@ export const ReviewForm = (props: ReviewFormProps) => {
     postReview.mutate({
       buildId: build.id,
       isLike,
-      content,
+      content: parsedContent,
     });
   };
 
@@ -145,7 +160,11 @@ export const ReviewForm = (props: ReviewFormProps) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <h3>{existingReview ? "Edit Your Review" : "Post A Review"}</h3>
+      <h3>
+        {existingReview && !existingReview.deletedAt
+          ? "Edit Your Review"
+          : "Publish A Review"}
+      </h3>
       <div>
         <label htmlFor="rating">Rating</label>
         <div className="flex cursor-pointer text-4xl text-orange-400">
@@ -166,31 +185,40 @@ export const ReviewForm = (props: ReviewFormProps) => {
           ))}
       </div>
       <div>
-        <label htmlFor="review">Review (optional)</label>
+        <label htmlFor="review">Review</label>
         <textarea
           name="review"
           id="review"
           value={content}
           onChange={(e) => setContent(e.target.value)}
         />
-        {errors.content.map((error, index) => (
-          <Alert key={`review-error-${index}`} status="error" message={error} />
-        ))}
+        {errors.content &&
+          errors.content.map((error, index) => (
+            <Alert
+              key={`review-error-${index}`}
+              status="error"
+              className="mt-2"
+              message={error}
+            />
+          ))}
       </div>
       <div>
         {postReview.isLoading || editReview.isLoading ? (
           <Spinner />
         ) : (
           <div className="flex justify-end gap-4">
-            <button className="mb-0" onClick={handleSubmitClick}>
-              {existingReview ? "Save Review" : "Post Review"}
+            <button className="mb-0 w-fit" onClick={handleSubmitClick}>
+              {existingReview ? "Publish" : "Publish"}
             </button>
-            {existingReview && (
+            {existingReview && !existingReview.deletedAt && (
               <>
-                <button className="secondary mb-0" onClick={handleDeleteClick}>
-                  Delete Review
+                <button
+                  className="secondary mb-0 w-fit"
+                  onClick={handleDeleteClick}
+                >
+                  Delete
                 </button>
-                <button className="tertiary" onClick={handleCancelClick}>
+                <button className="tertiary w-fit" onClick={handleCancelClick}>
                   Cancel
                 </button>
               </>
@@ -232,7 +260,7 @@ export const ReviewForm = (props: ReviewFormProps) => {
                     <div className="mb-4">
                       <Alert
                         status="error"
-                        message="Are you sure you want to delete your review? This action cannot be undone."
+                        message="Are you sure you want to delete your review? It will be removed from the public page, but remain as a draft for you to edit and publish later."
                       />
                     </div>
                     {deleteReviewMutation.isLoading ? (
@@ -257,13 +285,14 @@ export const ReviewForm = (props: ReviewFormProps) => {
           </div>
         </Dialog>
       </Transition>
-      {errors.general?.map((error, index) => (
-        <Alert
-          key={`submission-error-${index}`}
-          status="error"
-          message={error}
-        />
-      ))}
+      {errors.general &&
+        errors.general.map((error, index) => (
+          <Alert
+            key={`submission-error-${index}`}
+            status="error"
+            message={error}
+          />
+        ))}
     </div>
   );
 };

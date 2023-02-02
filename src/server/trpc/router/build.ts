@@ -142,6 +142,7 @@ export const buildRouter = router({
 												}
 											}
 										},
+										deletedAt: true,
 										createdAt: true,
 										updatedAt: true,
 										likes: {
