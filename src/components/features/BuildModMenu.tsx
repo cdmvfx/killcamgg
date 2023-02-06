@@ -1,25 +1,31 @@
 import { Popover } from "@headlessui/react";
 import { trpc } from "../../utils/trpc";
+import Button from "../ui/Button";
+import PopperButton from "../ui/PopperButton";
 import Spinner from "../ui/Spinner";
+import StatusBadge from "../ui/StatusBadge";
 
 type Props = {
   buildId: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
 };
 
 const BuildModMenu = (props: Props) => {
-  const { buildId } = props;
+  const { buildId, status } = props;
 
   const { mutate: approveBuildMutation, isLoading: approveBuildLoading } =
     trpc.build.approve.useMutation({
       onSuccess: () => {
-        alert("Build approved!");
+        utils.build.getOne.invalidate({ id: buildId });
       },
     });
+
+  const utils = trpc.useContext();
 
   const { mutate: rejectBuildMutation, isLoading: rejectBuildLoading } =
     trpc.build.reject.useMutation({
       onSuccess: () => {
-        alert("Build rejected!");
+        utils.build.getOne.invalidate({ id: buildId });
       },
     });
 
@@ -38,26 +44,30 @@ const BuildModMenu = (props: Props) => {
       {isLoading ? (
         <Spinner />
       ) : (
-        <Popover className="relative">
-          <Popover.Button className="mb-0 md:w-48">Mod Actions</Popover.Button>
-
-          <Popover.Panel className="absolute z-10 md:w-48">
-            <div className="w-full rounded-lg bg-neutral-900 p-4 md:w-48">
-              <button
-                className="w-full border-transparent bg-emerald-500 "
-                onClick={() => approveBuild()}
-              >
-                Approve Build
-              </button>
-              <button
-                className="w-full border-transparent bg-red-500 "
-                onClick={() => rejectBuild()}
-              >
-                Reject Build
-              </button>
-            </div>
-          </Popover.Panel>
-        </Popover>
+        <>
+          <PopperButton
+            showOn="click"
+            button={<StatusBadge status={status} />}
+            tooltip={
+              <>
+                <Button
+                  text="Approve Build"
+                  onClick={approveBuild}
+                  variant="plain"
+                  width="full"
+                  classNames="mb-4 bg-emerald-600 hover:bg-emerald-500 border-transparent"
+                />
+                <Button
+                  text="Reject Build"
+                  onClick={rejectBuild}
+                  width="full"
+                  variant="plain"
+                  classNames="bg-red-600 hover:bg-red-500 border-transparent"
+                />
+              </>
+            }
+          />
+        </>
       )}
     </>
   );

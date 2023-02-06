@@ -10,13 +10,13 @@ import type { BuildWithReviewsAndAuthor } from "../../types/Builds";
 
 type FilteredBuildGridProps = {
   userFavorites: string[] | null;
-  selectedWeapons?: Weapon[];
+  selectedWeapon: Weapon | null;
   selectedAttachments?: Attachment[];
   sortBy: SortOption;
 };
 
 const FilteredBuildGrid = (props: FilteredBuildGridProps) => {
-  const { userFavorites, selectedWeapons, selectedAttachments, sortBy } = props;
+  const { userFavorites, selectedWeapon, selectedAttachments, sortBy } = props;
 
   const { data: builds, isLoading } = trpc.build.getAll.useQuery();
 
@@ -24,13 +24,13 @@ const FilteredBuildGrid = (props: FilteredBuildGridProps) => {
     return <Spinner />;
   }
 
-  const filteredWeaponIds = selectedWeapons?.map((weapon) => weapon.id) || [];
+  const filteredWeaponId = selectedWeapon?.id;
   const filteredAttachmentIds =
     selectedAttachments?.map((attachment) => attachment.id) || [];
 
   const filteredBuilds = builds.filter((build) => {
-    if (filteredWeaponIds.length > 0) {
-      if (!filteredWeaponIds.includes(build.weaponId)) {
+    if (filteredWeaponId) {
+      if (filteredWeaponId !== build.weaponId) {
         return false;
       }
     }

@@ -5,6 +5,7 @@ import Heading from "../components/ui/Heading";
 import { trpc } from "../utils/trpc";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import Button from "../components/ui/Button";
 
 const Home: NextPage = () => {
   const { data: session, status } = useSession();
@@ -34,18 +35,28 @@ const Home: NextPage = () => {
               </div>
               <div className="flex flex-col md:flex-row md:gap-8">
                 <Link href="/builds">
-                  <button className="large md:w-48">Browse Builds</button>
+                  <Button
+                    text="Browse Builds"
+                    variant="primary"
+                    classNames="px-6 text-xl"
+                  />
                 </Link>
                 {status !== "loading" && session && (
                   <Link href="/submit">
-                    <button className="large secondary md:w-48">
-                      Submit A Build
-                    </button>
+                    <Button
+                      text="Submit A Build"
+                      variant="secondary"
+                      classNames="px-6 text-xl"
+                    />
                   </Link>
                 )}
                 {status !== "loading" && !session && (
                   <Link href="/signin">
-                    <button className="large secondary md:w-48">Sign In</button>
+                    <Button
+                      text="Sign In"
+                      variant="secondary"
+                      classNames="px-6 text-xl"
+                    />
                   </Link>
                 )}
               </div>

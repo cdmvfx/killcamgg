@@ -70,31 +70,3 @@ select:focus,
 .grouped-dropdown:focus {
   @apply outline outline-orange-500;
 }
-
-button {
-  @apply mb-2 w-full rounded-md border border-orange-600 bg-orange-600 px-4 py-2 font-bold tracking-wide text-white transition-all md:w-64;
-}
-
-button:not(.secondary):not(.tertiary):hover {
-  @apply bg-orange-500;
-}
-
-button.secondary {
-  @apply border border-orange-600 bg-transparent;
-}
-
-button.secondary:hover {
-  @apply text-orange-500;
-}
-
-button.tertiary {
-  @apply border-0 bg-transparent transition-all hover:border-b-orange-600 hover:text-orange-600;
-}
-
-button.large {
-  @apply py-4 px-8;
-}
-
-.panel button:last-of-type {
-  @apply mb-0;
-}

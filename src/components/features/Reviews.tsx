@@ -17,6 +17,7 @@ import Alert from "../ui/Alert";
 import Spinner from "../ui/Spinner";
 import Toast from "../ui/Toast";
 import type { ReviewFromUserGetProfileDataResult } from "../../types/Users";
+import Button from "../ui/Button";
 
 type ReviewGridProps = {
   reviews: ReviewFromUserGetProfileDataResult[];
@@ -239,19 +240,19 @@ export const ReviewItem = (props: ReviewItemProps) => {
             </div>
             <div>{review.createdAt.toISOString().split("T")[0]}</div>
             {review.authorId === sessionUser?.id && (
-              <button
-                className="tertiary mb-0 w-fit p-0"
+              <Button
+                text="Edit"
+                classNames="p-0 mb-0 hover:text-orange-500"
+                variant="plain"
                 onClick={handleClickEdit}
-              >
-                Edit
-              </button>
+              />
             )}
-            <button
+            <Button
+              text="Reply"
+              classNames="p-0 mb-0 hover:text-orange-500"
+              variant="plain"
               onClick={() => setIsReplyFormOpen((prev) => !prev)}
-              className="tertiary w-fit p-0"
-            >
-              Reply
-            </button>
+            />
           </div>
           {isReplyFormOpen && (
             <ReplyForm
@@ -377,12 +378,12 @@ const ReplyItem = ({
             {sessionUser?.id === reply.author.id && (
               <DeleteReply replyId={reply.id} buildId={buildId} />
             )}
-            <button
+            <Button
+              text="Reply"
+              classNames="p-0 mb-0 hover:text-orange-500"
+              variant="plain"
               onClick={() => setIsReplyFormOpen((prev) => !prev)}
-              className="tertiary w-fit p-0"
-            >
-              Reply
-            </button>
+            />
           </div>
         </div>
       </div>
@@ -463,12 +464,18 @@ const ReplyForm = (props: ReplyFormProps) => {
         onChange={(e) => setContent(e.target.value)}
       />
       <div className="gap-4 md:flex">
-        <button className="mb-0 w-fit border-0" onClick={sendReply}>
-          Send
-        </button>
-        <button className="tertiary w-fit" onClick={closeReplyForm}>
-          Cancel
-        </button>
+        <Button
+          text="Send"
+          classNames="p-0 mb-0 border-0"
+          variant="primary"
+          onClick={sendReply}
+        />
+        <Button
+          text="Cancel"
+          classNames="p-0 mb-0 hover:text-orange-500"
+          variant="plain"
+          onClick={closeReplyForm}
+        />
       </div>
     </div>
   );
@@ -494,12 +501,12 @@ const DeleteReply = (props: { replyId: string; buildId: string }) => {
 
   return (
     <>
-      <button
-        className="tertiary mb-0 w-fit p-0"
+      <Button
+        text="Delete"
+        classNames="p-0 mb-0 hover:text-orange-500"
+        variant="plain"
         onClick={() => setShowDeleteModal(true)}
-      >
-        Delete
-      </button>
+      />
       <Transition appear show={showDeleteModal} as={React.Fragment}>
         <Dialog
           as="div"
@@ -541,15 +548,20 @@ const DeleteReply = (props: { replyId: string; buildId: string }) => {
                       <Spinner />
                     ) : (
                       <>
-                        <button className="w-full" onClick={deleteReply}>
-                          Delete
-                        </button>
-                        <button
-                          className="secondary w-full"
+                        <Button
+                          text="Delete"
+                          classNames="mb-2"
+                          variant="primary"
+                          onClick={deleteReply}
+                          width="full"
+                        />
+                        <Button
+                          text="Cancel"
+                          classNames=""
+                          variant="secondary"
+                          width="full"
                           onClick={() => setShowDeleteModal(false)}
-                        >
-                          Cancel
-                        </button>
+                        />
                       </>
                     )}
                   </div>

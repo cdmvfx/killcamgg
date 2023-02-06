@@ -18,7 +18,10 @@ const UserAvatar = ({
   className,
 }: UserAvatarProps) => {
   return (
-    <Link href={`/${user.name}`} className={`flex items-center ${className}`}>
+    <Link
+      href={`/${user.name}`}
+      className={`flex items-center transition-all hover:text-orange-500 ${className}`}
+    >
       {showAvatar && (
         <Image
           src={user.image as string}
