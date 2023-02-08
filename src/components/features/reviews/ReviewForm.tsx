@@ -13,7 +13,7 @@ import {
 
 import type { ReviewFromBuildGetOneResult } from "../../../types/Reviews";
 import type { Session } from "next-auth";
-import { Dialog, Transition } from "@headlessui/react";
+import ModalButton from "../../ui/ModalButton";
 
 type ReviewFormProps = {
   build: Build;
@@ -22,7 +22,7 @@ type ReviewFormProps = {
   sessionUser: NonNullable<Session["user"]>;
 };
 
-export const ReviewForm = (props: ReviewFormProps) => {
+const ReviewForm = (props: ReviewFormProps) => {
   const { setShowReviewForm, build, existingReview } = props;
 
   type FormErrors = {
@@ -226,65 +226,28 @@ export const ReviewForm = (props: ReviewFormProps) => {
           </div>
         )}
       </div>
-      <Transition appear show={showDeleteModal} as={React.Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-10"
-          onClose={() => setShowDeleteModal(false)}
-        >
-          <Transition.Child
-            as={React.Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black bg-opacity-50" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 flex items-center justify-center overflow-y-auto">
-            <div className="flex items-center justify-center md:p-4">
-              <Transition.Child
-                as={React.Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="min-h-full w-full max-w-lg transform overflow-hidden bg-[#274b48] p-4 text-left align-middle shadow-xl transition-all md:rounded-2xl">
-                  <div>
-                    <div className="mb-4">
-                      <Alert
-                        status="error"
-                        message="Are you sure you want to delete your review? It will be removed from the public page, but remain as a draft for you to edit and publish later."
-                      />
-                    </div>
-                    {deleteReviewMutation.isLoading ? (
-                      <Spinner />
-                    ) : (
-                      <>
-                        <button className="w-full" onClick={handleDeleteFinal}>
-                          Delete
-                        </button>
-                        <button
-                          className="secondary w-full"
-                          onClick={handleDeleteCancel}
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
+      <ModalButton show={showDeleteModal} onClose={handleDeleteCancel}>
+        <div>
+          <div className="mb-4">
+            <Alert
+              status="error"
+              message="Are you sure you want to delete your review? It will be removed from the public page, but remain as a draft for you to edit and publish later."
+            />
           </div>
-        </Dialog>
-      </Transition>
+          {deleteReviewMutation.isLoading ? (
+            <Spinner />
+          ) : (
+            <>
+              <button className="w-full" onClick={handleDeleteFinal}>
+                Delete
+              </button>
+              <button className="secondary w-full" onClick={handleDeleteCancel}>
+                Cancel
+              </button>
+            </>
+          )}
+        </div>
+      </ModalButton>
       {errors.general &&
         errors.general.map((error, index) => (
           <Alert
@@ -296,3 +259,5 @@ export const ReviewForm = (props: ReviewFormProps) => {
     </div>
   );
 };
+
+export default ReviewForm;

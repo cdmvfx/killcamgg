@@ -1,12 +1,12 @@
 import { Popover, Transition } from "@headlessui/react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { usePopper } from "react-popper";
 
 type Props = {
   button: React.ReactNode;
   tooltip: React.ReactNode;
   onClick?: () => void;
-  showOn: "hover" | "click";
+  showOn: "hover" | "click" | "hovermenu";
   buttonClass?: string;
 };
 
@@ -19,21 +19,41 @@ const PopperButton = (props: Props) => {
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
     placement: "bottom",
     modifiers: [
-      { name: "offset", options: { offset: [0, 20] } },
+      { name: "offset", options: { offset: [0, 10] } },
       { name: "arrow", options: { element: arrowElement, padding: 5 } },
     ],
   });
 
   const [tooltipOpen, setTooltipOpen] = useState(false);
+  const [isMouseOver, setIsMouseOver] = useState(false);
+
+  useEffect(() => {
+    if (showOn === "hovermenu" && !isMouseOver) {
+      const closeTooltip = setTimeout(() => {
+        setTooltipOpen(false);
+      }, 200);
+
+      return () => clearTimeout(closeTooltip);
+    }
+  }, [isMouseOver, showOn]);
 
   return (
-    <Popover className="relative inline-block">
+    <Popover
+      className="relative inline-block"
+      onMouseEnter={() => {
+        setIsMouseOver(true);
+      }}
+      onMouseLeave={() => {
+        setIsMouseOver(false);
+      }}
+    >
       {() => (
         <>
           <Popover.Button
             ref={setReferenceElement as React.LegacyRef<HTMLButtonElement>}
             onMouseEnter={() => {
-              if (showOn === "hover") setTooltipOpen(true);
+              if (showOn === "hover" || showOn === "hovermenu")
+                setTooltipOpen(true);
             }}
             onMouseLeave={() => {
               if (showOn === "hover") setTooltipOpen(false);
@@ -54,10 +74,11 @@ const PopperButton = (props: Props) => {
             leave="ease-in-out duration-200"
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
+            className=""
           >
             <Popover.Panel
               static
-              className="absolute z-10"
+              className="absolute z-20 "
               ref={setPopperElement as React.LegacyRef<HTMLDivElement>}
               style={styles.popper}
               {...attributes.popper}
@@ -68,7 +89,7 @@ const PopperButton = (props: Props) => {
                   ...styles.arrow,
                   clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
                 }}
-                className="-top-[10px] -z-10 h-[10px] w-[15px] bg-neutral-900 before:visible before:rotate-45"
+                className="-top-[10px] -z-10 h-[10px] w-[20px] bg-neutral-900 before:visible before:rotate-45"
               />
               <div className="m-auto min-w-max rounded-lg bg-neutral-900 p-4">
                 {tooltip}

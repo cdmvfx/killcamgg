@@ -2,12 +2,12 @@ import Link from "next/link";
 import Heading from "../../components/ui/Heading";
 import Panel from "../../components/ui/Panel";
 import UserAvatar from "../../components/ui/UserAvatar";
-import { ReviewList } from "../../components/features/Reviews";
+import { ReviewList } from "../../components/features/reviews/ReviewList";
 import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
 import { trpc } from "../../utils/trpc";
 import React, { useState } from "react";
-import BuildForm from "../../components/features/BuildForm";
+import { BuildForm, BuildModMenu } from "../../components/features/build";
 import {
   MdThumbDownOffAlt,
   MdThumbUpOffAlt,
@@ -23,18 +23,16 @@ import type {
 import type { Dispatch, SetStateAction } from "react";
 import Spinner from "../../components/ui/Spinner";
 import { Dialog, Transition } from "@headlessui/react";
-import Image from "next/image";
 import { isAuthorized as checkIfModOrAdmin } from "../../utils/isAuthorized";
-import BuildModMenu from "../../components/features/BuildModMenu";
-import { FaArrowsAltH, FaArrowsAltV, FaEdit, FaLink } from "react-icons/fa";
+import { FaEdit, FaLink } from "react-icons/fa";
 import { copyToClipboard } from "../../utils/copyToClipboard";
 import Toast from "../../components/ui/Toast";
 import type { ReviewFromBuildGetOneResult } from "../../types/Reviews";
 import { appRouter } from "../../server/trpc/router/_app";
 import { createContextServerSideProps } from "../../server/trpc/context";
-import { ReviewForm } from "../../components/features/reviews/ReviewForm";
+import { ReviewForm } from "../../components/features/reviews";
+import { BuildSetup } from "../../components/features/build";
 import PopperButton from "../../components/ui/PopperButton";
-import BuildSetup from "../../components/features/build/BuildSetup";
 import Button from "../../components/ui/Button";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;

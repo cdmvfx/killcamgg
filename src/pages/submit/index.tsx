@@ -1,4 +1,4 @@
-import BuildForm from "../../components/features/BuildForm";
+import { BuildForm } from "../../components/features/build";
 import Heading from "../../components/ui/Heading";
 import Panel from "../../components/ui/Panel";
 

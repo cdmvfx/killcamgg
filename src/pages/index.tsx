@@ -1,6 +1,6 @@
 import { type NextPage } from "next";
 import { useSession } from "next-auth/react";
-import FilteredBuildGrid from "../components/features/BuildList";
+import { FilteredBuildGrid } from "../components/features/build";
 import Heading from "../components/ui/Heading";
 import { trpc } from "../utils/trpc";
 import { useRouter } from "next/router";

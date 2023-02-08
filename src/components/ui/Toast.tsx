@@ -44,7 +44,7 @@ const Toast = (props: Props) => {
 
   return (
     <div
-      className={`fixed left-0 flex w-full items-center justify-center text-center text-xl text-white transition-all ${
+      className={`fixed left-0 z-20 flex w-full items-center justify-center text-center text-xl text-white transition-all ${
         isVisible ? toastStylesActive : "-bottom-full"
       }`}
     >

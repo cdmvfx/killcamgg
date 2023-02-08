@@ -1,4 +1,4 @@
-import { trpc } from "../../utils/trpc";
+import { trpc } from "../../../utils/trpc";
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import { z } from "zod";
@@ -8,14 +8,14 @@ import type {
   Weapon,
   WeaponCategory,
 } from "@prisma/client";
-import Alert from "../ui/Alert";
-import Heading from "../ui/Heading";
-import Panel from "../ui/Panel";
-import type { AttachmentSetupWithAttachment } from "../../types/Attachments";
+import Alert from "../../ui/Alert";
+import Heading from "../../ui/Heading";
+import Panel from "../../ui/Panel";
+import type { AttachmentSetupWithAttachment } from "../../../types/Attachments";
 import { useSession } from "next-auth/react";
-import type { BuildGetOneResult } from "../../types/Builds";
+import type { BuildGetOneResult } from "../../../types/Builds";
 import { useRouter } from "next/router";
-import Spinner from "../ui/Spinner";
+import Spinner from "../../ui/Spinner";
 import { Listbox, Transition } from "@headlessui/react";
 import { IoMdClose } from "react-icons/io";
 import { FaArrowsAltH, FaArrowsAltV } from "react-icons/fa";

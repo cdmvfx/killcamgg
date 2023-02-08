@@ -1,4 +1,4 @@
-import FilteredBuildGrid from "../../components/features/BuildList";
+import { FilteredBuildGrid } from "../../components/features/build";
 import { useState } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import type {

@@ -1,18 +1,18 @@
 import Image from "next/image";
 import Heading from "../components/ui/Heading";
 import { useSession } from "next-auth/react";
-import { BuildGrid } from "../components/features/BuildList";
-import { ReviewGrid } from "../components/features/Reviews";
+import { BuildGrid } from "../components/features/build";
+import { ReviewGrid } from "../components/features/reviews";
 import { trpc } from "../utils/trpc";
+import Panel from "../components/ui/Panel";
+import { createContextServerSideProps } from "../server/trpc/context";
+import { appRouter } from "../server/trpc/router/_app";
 
 import type {
   NextPage,
   GetServerSidePropsContext,
   InferGetServerSidePropsType,
 } from "next";
-import Panel from "../components/ui/Panel";
-import { createContextServerSideProps } from "../server/trpc/context";
-import { appRouter } from "../server/trpc/router/_app";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 

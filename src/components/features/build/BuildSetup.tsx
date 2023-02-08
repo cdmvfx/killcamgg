@@ -1,6 +1,4 @@
-import Image from "next/image";
-import React from "react";
-import { FaArrowsAltH, FaArrowsAltV, FaLock } from "react-icons/fa";
+import { FaArrowsAltH, FaArrowsAltV } from "react-icons/fa";
 import type { BuildGetOneResult } from "../../../types/Builds";
 import PopperButton from "../../ui/PopperButton";
 
@@ -15,7 +13,14 @@ const BuildSetup = (props: Props) => {
     <div className="basis-full md:basis-auto">
       <div className="mb-4 md:text-center">
         <label>{build.weapon.category}</label>
-        <div className="mb-4 text-2xl">{build.weapon.name}</div>
+        <div className="mb-4 text-2xl">
+          <PopperButton
+            buttonClass="hover:text-orange-600 text-left"
+            button={build.weapon.name}
+            showOn="hover"
+            tooltip={build.weapon.unlock_req || "No unlock requirements"}
+          />
+        </div>
         {/* <div className="relative m-auto h-24 w-full">
           <Image
             src="/images/kastov-762.webp"
@@ -30,7 +35,7 @@ const BuildSetup = (props: Props) => {
           return (
             <div
               key={index}
-              className="grid w-full grid-cols-[3rem,auto,5rem]  items-center gap-2"
+              className="grid w-full  grid-cols-[3rem,auto,5rem] items-center gap-2"
             >
               <div
                 className="h-10 w-10 bg-orange-600"

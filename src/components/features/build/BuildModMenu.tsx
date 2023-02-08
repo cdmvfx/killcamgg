@@ -1,9 +1,8 @@
-import { Popover } from "@headlessui/react";
-import { trpc } from "../../utils/trpc";
-import Button from "../ui/Button";
-import PopperButton from "../ui/PopperButton";
-import Spinner from "../ui/Spinner";
-import StatusBadge from "../ui/StatusBadge";
+import { trpc } from "../../../utils/trpc";
+import Button from "../../ui/Button";
+import PopperButton from "../../ui/PopperButton";
+import Spinner from "../../ui/Spinner";
+import StatusBadge from "../../ui/StatusBadge";
 
 type Props = {
   buildId: string;
@@ -55,14 +54,14 @@ const BuildModMenu = (props: Props) => {
                   onClick={approveBuild}
                   variant="plain"
                   width="full"
-                  classNames="mb-4 bg-emerald-600 hover:bg-emerald-500 border-transparent"
+                  classNames="mb-4 p-4 bg-emerald-600 hover:bg-emerald-500 border-transparent"
                 />
                 <Button
                   text="Reject Build"
                   onClick={rejectBuild}
                   width="full"
                   variant="plain"
-                  classNames="bg-red-600 hover:bg-red-500 border-transparent"
+                  classNames="bg-red-600 p-4  hover:bg-red-500 border-transparent"
                 />
               </>
             }
