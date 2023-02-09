@@ -1,19 +1,20 @@
-import { prisma } from "../server/db/client";
 import Image from "next/image";
 import Heading from "../components/ui/Heading";
 import { useSession } from "next-auth/react";
-import { BuildGrid } from "../components/features/BuildList";
-import { ReviewGrid } from "../components/features/Reviews";
+import { BuildGrid } from "../components/features/build";
+import { ReviewGrid } from "../components/features/reviews";
 import { trpc } from "../utils/trpc";
+import Panel from "../components/ui/Panel";
+import { createContextServerSideProps } from "../server/trpc/context";
+import { appRouter } from "../server/trpc/router/_app";
 
 import type {
   NextPage,
-  GetStaticPropsContext,
-  InferGetStaticPropsType,
+  GetServerSidePropsContext,
+  InferGetServerSidePropsType,
 } from "next";
-import Panel from "../components/ui/Panel";
 
-type PageProps = InferGetStaticPropsType<typeof getStaticProps>;
+type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
 const ProfilePage: NextPage<PageProps> = (props) => {
   const { user: userData } = props;
@@ -109,7 +110,7 @@ const ProfilePage: NextPage<PageProps> = (props) => {
   );
 };
 
-export const getStaticProps = async (ctx: GetStaticPropsContext) => {
+export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const { params } = ctx;
 
   if (!params || !params.username || typeof params.username !== "string") {
@@ -118,68 +119,19 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
     };
   }
 
-  const username = params.username.toLowerCase();
+  const trpcContext = await createContextServerSideProps(ctx);
 
-  const profileData = await prisma.user.findFirst({
-    where: { name: { equals: username, mode: "insensitive" } },
-    select: {
-      name: true,
-      image: true,
-      createdAt: true,
-      id: true,
-      builds: {
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-          weapon: true,
-          attachmentSetups: {
-            include: {
-              attachment: true,
-            },
-          },
-        },
-      },
-      reviews: {
-        include: {
-          build: true,
-        },
-      },
-      favorites: {
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-          weapon: true,
-          attachmentSetups: {
-            include: {
-              attachment: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  const caller = appRouter.createCaller(trpcContext);
 
-  if (!profileData) {
+  const profile = await caller.user.getProfileData({ name: params.username });
+
+  if (!profile) {
     return {
       notFound: true,
     };
   }
 
-  return { props: { user: profileData }, revalidate: 60 };
+  return { props: { user: profile } };
 };
-
-export async function getStaticPaths() {
-  return { paths: [], fallback: "blocking" };
-}
 
 export default ProfilePage;

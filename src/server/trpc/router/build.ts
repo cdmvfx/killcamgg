@@ -110,8 +110,48 @@ export const buildRouter = router({
 								image: true,
 							},
 						},
+						favorites: {
+							select: {
+								id: true,
+							}
+						},
 						reviews: {
 							include: {
+								likes: {
+									select: {
+										id: true
+									}
+								},
+								replies: {
+									select: {
+										id: true,
+										content: true,
+										author: {
+											select: {
+												id: true,
+												name: true,
+												image: true,
+											},
+										},
+										reply: {
+											select: {
+												author: {
+													select: {
+														name: true
+													}
+												}
+											}
+										},
+										deletedAt: true,
+										createdAt: true,
+										updatedAt: true,
+										likes: {
+											select: {
+												id: true
+											}
+										},
+									}
+								},
 								author: {
 									select: {
 										id: true,
@@ -268,6 +308,45 @@ export const buildRouter = router({
 				})
 			} catch (error) {
 				console.log('Error approving build.', error);
+			}
+		}),
+	toggleFavorite: protectedProcedure
+		.input(
+			z.object({
+				buildId: z.string(),
+				status: z.boolean()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+
+				if (!input.status) {
+					return ctx.prisma.build.update({
+						where: {
+							id: input.buildId
+						},
+						data: {
+							favorites: {
+								disconnect: [{ id: ctx.session.user.id }]
+							}
+						},
+					})
+				}
+
+				return ctx.prisma.build.update({
+					where: {
+						id: input.buildId
+					},
+					data: {
+						favorites: {
+							connect: [{ id: ctx.session.user.id }]
+						}
+					},
+				})
+			}
+			catch (error) {
+				console.warn('Error in build.removeFavorite: ');
+				console.log(error);
 			}
 		})
 

@@ -1,6 +1,6 @@
-import type { User } from "@prisma/client";
+import type { Session } from "next-auth";
 
-export const isAuthorized = (user: User & any) => {
+export const isAuthorized = (user: NonNullable<Session['user']> | null) => {
 	if (!user) {
 		return false;
 	}

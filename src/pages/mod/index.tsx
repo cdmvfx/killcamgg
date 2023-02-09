@@ -1,8 +1,7 @@
 import { Tab } from "@headlessui/react";
 import type { GetServerSidePropsContext } from "next";
-import { useSession } from "next-auth/react";
 import { Fragment } from "react";
-import { BuildGrid } from "../../components/features/BuildList";
+import { BuildGrid } from "../../components/features/build";
 import Heading from "../../components/ui/Heading";
 import Spinner from "../../components/ui/Spinner";
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
@@ -10,10 +9,6 @@ import { isAuthorized } from "../../utils/isAuthorized";
 import { trpc } from "../../utils/trpc";
 
 const ModPage = () => {
-  const { data: session } = useSession();
-
-  console.log("useSession Mod Page", session);
-
   const { data: pendingBuilds } = trpc.build.getAllPending.useQuery();
   const { data: rejectedBuilds } = trpc.build.getAllRejected.useQuery();
 
@@ -69,7 +64,7 @@ const ModPage = () => {
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const session = await getServerAuthSession(ctx);
-  const authorized = isAuthorized(session?.user);
+  const authorized = isAuthorized(session?.user || null);
 
   if (!authorized) {
     return {
