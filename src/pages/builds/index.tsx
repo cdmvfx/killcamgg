@@ -1,4 +1,4 @@
-import FilteredBuildGrid from "../../components/features/BuildList";
+import { FilteredBuildGrid } from "../../components/features/build";
 import { useState } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import type {
@@ -14,9 +14,10 @@ import type { AttachmentsByCategory } from "../../types/Attachments";
 import type { SortOption } from "../../types/Filters";
 import sortOptions from "../../lib/sortOptions";
 import { useSession } from "next-auth/react";
+import Button from "../../components/ui/Button";
 
 const Builds = () => {
-  const [selectedWeapons, setSelectedWeapons] = useState<Weapon[]>([]);
+  const [selectedWeapon, setSelectedWeapon] = useState<Weapon | null>(null);
   const [selectedAttachments, setSelectedAttachments] = useState<Attachment[]>(
     []
   );
@@ -49,8 +50,8 @@ const Builds = () => {
         !isLoadingAttachments ? (
           <BuildFilters
             weaponsByCategory={weaponsByCategory}
-            selectedWeapons={selectedWeapons}
-            setSelectedWeapons={setSelectedWeapons}
+            selectedWeapon={selectedWeapon}
+            setSelectedWeapon={setSelectedWeapon}
             attachmentsByCategory={attachmentsByCategory}
             selectedAttachments={selectedAttachments}
             setSelectedAttachments={setSelectedAttachments}
@@ -62,7 +63,7 @@ const Builds = () => {
         )}
         <FilteredBuildGrid
           userFavorites={userFavorites}
-          selectedWeapons={selectedWeapons}
+          selectedWeapon={selectedWeapon}
           selectedAttachments={selectedAttachments}
           sortBy={sortBy}
         />
@@ -73,8 +74,8 @@ const Builds = () => {
 
 type BuildFiltersProps = {
   weaponsByCategory: WeaponsByCategory;
-  selectedWeapons: Weapon[];
-  setSelectedWeapons: (weapons: Weapon[]) => void;
+  selectedWeapon: Weapon | null;
+  setSelectedWeapon: (weapons: Weapon | null) => void;
   attachmentsByCategory: AttachmentsByCategory;
   selectedAttachments: Attachment[];
   setSelectedAttachments: (attachments: Attachment[]) => void;
@@ -85,8 +86,8 @@ type BuildFiltersProps = {
 const BuildFilters = (props: BuildFiltersProps) => {
   const {
     weaponsByCategory,
-    selectedWeapons,
-    setSelectedWeapons,
+    selectedWeapon,
+    setSelectedWeapon,
     attachmentsByCategory,
     selectedAttachments,
     setSelectedAttachments,
@@ -105,19 +106,22 @@ const BuildFilters = (props: BuildFiltersProps) => {
   return (
     <div className="mb-4 flex flex-col gap-4 md:flex-row md:gap-8">
       <div className="relative md:w-64">
-        <Listbox value={selectedWeapons} onChange={setSelectedWeapons} multiple>
+        <Listbox value={selectedWeapon} onChange={setSelectedWeapon}>
           <Listbox.Label className="mb-2 flex items-center justify-between">
             <div>Filter by weapons</div>
-            <button
-              className="tertiary m-0 w-fit p-0"
-              onClick={() => setSelectedWeapons([])}
-            >
-              Clear
-            </button>
+            <Button
+              text="Clear"
+              variant="plain"
+              classNames="hover:text-orange-500"
+              onClick={() => setSelectedWeapon(null)}
+            />
           </Listbox.Label>
-          <Listbox.Button className={"mb-4"}>
-            {selectedWeapons.length === 0 ? "Any Weapons" : ""}
-            {selectedWeapons.map((weapon) => weapon.name).join(", ")}
+          <Listbox.Button className="w-full">
+            <Button
+              width="full"
+              text={<>{!selectedWeapon ? "Any Weapon" : selectedWeapon.name}</>}
+              variant="secondary"
+            />
           </Listbox.Button>
           <Transition
             enter="transform transition duration-150 ease-in-out"
@@ -178,18 +182,26 @@ const BuildFilters = (props: BuildFiltersProps) => {
         >
           <Listbox.Label className="mb-2 flex items-center justify-between">
             <div>Filter by attachments</div>
-            <button
-              className="tertiary m-0 w-fit p-0"
+            <Button
+              text="Clear"
+              variant="plain"
+              classNames="hover:text-orange-500"
               onClick={() => setSelectedAttachments([])}
-            >
-              Clear
-            </button>
+            />
           </Listbox.Label>
-          <Listbox.Button className={"mb-4"}>
-            {selectedAttachments.length === 0 ? "Any Attachments" : ""}
-            {selectedAttachments
-              .map((attachment) => attachment.name)
-              .join(", ")}
+          <Listbox.Button className="w-full">
+            <Button
+              width="full"
+              text={
+                <>
+                  {selectedAttachments.length === 0 ? "Any Attachments" : ""}
+                  {selectedAttachments
+                    .map((attachment) => attachment.name)
+                    .join(", ")}
+                </>
+              }
+              variant="secondary"
+            />
           </Listbox.Button>
           <Transition
             enter="transform transition duration-150 ease-in-out"
@@ -247,7 +259,9 @@ const BuildFilters = (props: BuildFiltersProps) => {
           <Listbox.Label className="mb-2 flex items-center justify-between">
             <div>Sort By</div>
           </Listbox.Label>
-          <Listbox.Button className={"mb-4"}>{sortBy.name}</Listbox.Button>
+          <Listbox.Button className="w-full">
+            <Button width="full" text={sortBy.name} variant="secondary" />
+          </Listbox.Button>
           <Transition
             enter="transform transition duration-150 ease-in-out"
             enterFrom="scale-0 opacity-0"

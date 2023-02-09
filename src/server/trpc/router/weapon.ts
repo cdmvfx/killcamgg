@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { WeaponCategory } from "@prisma/client";
 import weapons from "../../../lib/weapons";
@@ -15,8 +14,6 @@ export const weaponRouter = router({
 		}
 	}),
 	getAllByCategory: publicProcedure.query(async ({ ctx }) => {
-
-
 		try {
 			const weapon = await ctx.prisma.weapon.findMany()
 			const weaponsByCategory = weapon.reduce((acc: WeaponsByCategory, cur) => {

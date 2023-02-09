@@ -4,6 +4,8 @@ import Drawer from "../ui/Drawer";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import PopperButton from "../ui/PopperButton";
+import { FaClock, FaFire, FaList, FaMedal } from "react-icons/fa";
 
 const Navbar = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -57,7 +59,7 @@ const Navbar = () => {
             >
               <IoMdMenu />
             </div>
-            <Link href={"/"} className="group ">
+            <Link href={"/"} className="group mr-8">
               <div className="hover font-jost text-2xl font-bold tracking-widest transition-all group-hover:text-orange-600">
                 KILLCAM
                 <span className="text-orange-600 transition-all group-hover:text-white">
@@ -66,21 +68,28 @@ const Navbar = () => {
               </div>
             </Link>
           </div>
-          <div className="hidden md:flex md:flex-1">
+          <div className="hidden items-center gap-8 md:flex md:flex-1">
             {navItems.map((item, index) => (
-              <Link
-                href={item.href}
-                className="p-4 transition-all hover:text-orange-400"
+              <PopperButton
                 key={`nav-desktop-item-${index}`}
-              >
-                <div className="font-jost">{item.name}</div>
-              </Link>
+                showOn="hovermenu"
+                button={
+                  <Link
+                    href={item.href}
+                    className="p-4 transition-all hover:text-orange-400"
+                    key={`nav-desktop-item-${index}`}
+                  >
+                    <div className="font-jost">{item.name}</div>
+                  </Link>
+                }
+                tooltip={<NavPopover item={item} />}
+              />
             ))}
             {isAuthorized &&
               modItems.map((item, index) => (
                 <Link
                   href={item.href}
-                  className="p-4 transition-all hover:text-orange-400"
+                  className="transition-all hover:text-orange-400"
                   key={`nav-mod-desktop-item-${index}`}
                 >
                   <div className="font-jost">{item.name}</div>
@@ -168,6 +177,70 @@ const Navbar = () => {
       )}
     </nav>
   );
+};
+
+type NavPopoverProps = {
+  item: {
+    name: string;
+    href: string;
+  };
+};
+
+const NavPopover = (props: NavPopoverProps) => {
+  const { item } = props;
+
+  switch (item.name) {
+    case "Builds":
+      return (
+        <div>
+          <div className="text-xl">Builds Menu</div>
+          <div className="mb-4">
+            Browse through our communities collection of builds, ready for you
+            to dominate the warzone.
+          </div>
+          <div className="grid grid-cols-2 grid-rows-2 gap-4">
+            <Link
+              href={`/builds/hot`}
+              className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
+            >
+              <div>
+                <FaFire />
+              </div>
+              <div>Hot Builds</div>
+            </Link>
+            <Link
+              href={`/builds/top`}
+              className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
+            >
+              <div>
+                <FaMedal />
+              </div>
+              <div>Top Builds</div>
+            </Link>
+            <Link
+              href={`/builds/new`}
+              className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
+            >
+              <div>
+                <FaClock />
+              </div>
+              <div>New Builds</div>
+            </Link>
+            <Link
+              href={`/builds/all`}
+              className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
+            >
+              <div>
+                <FaList />
+              </div>
+              <div>All Builds</div>
+            </Link>
+          </div>
+        </div>
+      );
+    default:
+      return <></>;
+  }
 };
 
 export default Navbar;

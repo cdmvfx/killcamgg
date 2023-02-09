@@ -22,6 +22,13 @@ export const reviewRouter = router({
 							authorId: ctx.session?.user?.id,
 							buildId: input.buildId
 						}
+					},
+					include: {
+						_count: {
+							select: {
+								likes: true
+							}
+						}
 					}
 				})
 			}
@@ -33,7 +40,7 @@ export const reviewRouter = router({
 		.input(
 			z.object({
 				buildId: z.string(),
-				isLike: z.boolean(),
+				isLike: z.boolean().nullable(),
 				content: z.string().nullable(),
 			})
 		)
@@ -45,7 +52,8 @@ export const reviewRouter = router({
 						buildId: input.buildId,
 						authorId: ctx.session.user.id,
 						isLike: input.isLike,
-						content: input.content
+						content: input.content,
+						deletedAt: null
 					}
 				})
 			}
@@ -65,7 +73,8 @@ export const reviewRouter = router({
 				include: {
 					reviews: {
 						select: {
-							isLike: true
+							isLike: true,
+							deletedAt: true
 						}
 					}
 				}
@@ -73,13 +82,15 @@ export const reviewRouter = router({
 
 			if (!build) return;
 
-			const totalLikes = build.reviews.reduce((acc, review) => {
-				if (review.isLike) return acc + 1;
-				return acc;
-			}, 0)
+			let totalLikes = 0;
+			let totalReviews = 0;
 
-			const averageRating = ((totalLikes / build.reviews.length) * 10) / 2 || 0;
-			const totalReviews = build.reviews.length;
+			for (const review of build.reviews) {
+				if (review.isLike) totalLikes++;
+				if (!review.deletedAt) totalReviews++;
+			}
+
+			const averageRating = ((totalLikes / totalReviews) * 10) / 2 || 0;
 
 			try {
 				await ctx.prisma.build.update({
@@ -98,8 +109,8 @@ export const reviewRouter = router({
 		.input(
 			z.object({
 				buildId: z.string(),
-				isLike: z.boolean(),
-				content: z.string()
+				isLike: z.boolean().nullable(),
+				content: z.string().nullable()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -113,7 +124,8 @@ export const reviewRouter = router({
 					},
 					data: {
 						isLike: input.isLike,
-						content: input.content
+						content: input.content,
+						deletedAt: null
 					}
 				})
 			}
@@ -127,7 +139,8 @@ export const reviewRouter = router({
 				include: {
 					reviews: {
 						select: {
-							isLike: true
+							isLike: true,
+							deletedAt: true
 						}
 					}
 				}
@@ -135,13 +148,18 @@ export const reviewRouter = router({
 
 			if (!build) return;
 
-			const totalLikes = build.reviews.reduce((acc, review) => {
-				if (review.isLike) return acc + 1;
-				return acc;
-			}, 0)
+			let totalLikes = 0;
+			let totalReviews = 0;
 
-			const averageRating = ((totalLikes / build.reviews.length) * 10) / 2 || 0;
-			const totalReviews = build.reviews.length;
+			for (const review of build.reviews) {
+				if (review.deletedAt) continue;
+				if (review.isLike) {
+					totalLikes++;
+				}
+				totalReviews++;
+			}
+
+			const averageRating = ((totalLikes / totalReviews) * 10) / 2 || 0;
 
 			try {
 				await ctx.prisma.build.update({
@@ -165,9 +183,12 @@ export const reviewRouter = router({
 		)
 		.mutation(async ({ ctx, input }) => {
 			try {
-				await ctx.prisma.review.delete({
+				await ctx.prisma.review.update({
 					where: {
 						id: input.id
+					},
+					data: {
+						deletedAt: new Date()
 					}
 				})
 			}
@@ -181,7 +202,8 @@ export const reviewRouter = router({
 				include: {
 					reviews: {
 						select: {
-							isLike: true
+							isLike: true,
+							deletedAt: true
 						}
 					}
 				}
@@ -189,13 +211,18 @@ export const reviewRouter = router({
 
 			if (!build) return;
 
-			const totalLikes = build.reviews.reduce((acc, review) => {
-				if (review.isLike) return acc + 1;
-				return acc;
-			}, 0)
+			let totalLikes = 0;
+			let totalReviews = 0;
 
-			const averageRating = ((totalLikes / build.reviews.length) * 10) / 2 || 0;
-			const totalReviews = build.reviews.length;
+			for (const review of build.reviews) {
+				if (review.deletedAt) continue;
+				if (review.isLike) {
+					totalLikes++;
+				}
+				totalReviews++;
+			}
+
+			const averageRating = ((totalLikes / totalReviews) * 10) / 2 || 0;
 
 			try {
 				await ctx.prisma.build.update({
@@ -208,6 +235,40 @@ export const reviewRouter = router({
 			}
 			catch (error) {
 				console.log('Error calculating new average rating in review.postReview: ', error);
+			}
+		}),
+	like: protectedProcedure
+		.input(
+			z.object({
+				reviewId: z.string(),
+				status: z.boolean()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				if (input.status) {
+					await ctx.prisma.review.update({
+						where: { id: input.reviewId },
+						data: {
+							likes: {
+								connect: [{ id: ctx.session.user.id }]
+							}
+						}
+					})
+				}
+				else {
+					await ctx.prisma.review.update({
+						where: { id: input.reviewId },
+						data: {
+							likes: {
+								disconnect: [{ id: ctx.session.user.id }]
+							}
+						}
+					})
+				}
+			}
+			catch (e) {
+				console.log(e);
 			}
 		}),
 	changeLike: protectedProcedure
@@ -249,7 +310,8 @@ export const reviewRouter = router({
 				include: {
 					reviews: {
 						select: {
-							isLike: true
+							isLike: true,
+							deletedAt: true
 						}
 					}
 				}
@@ -257,13 +319,22 @@ export const reviewRouter = router({
 
 			if (!build) return;
 
-			const totalLikes = build.reviews.reduce((acc, review) => {
-				if (review.isLike) return acc + 1;
-				return acc;
-			}, 0)
+			let totalLikes = 0;
+			let totalReviews = 0;
 
-			const averageRating = ((totalLikes / build.reviews.length) * 10) / 2 || 0;
-			const totalReviews = build.reviews.length;
+			for (const review of build.reviews) {
+				if (review.deletedAt) continue;
+				if (review.isLike) {
+					totalLikes++;
+				}
+				totalReviews++;
+			}
+
+			const averageRating = ((totalLikes / totalReviews) * 10) / 2 || 0;
+
+			console.log('totalLikes: ', totalLikes)
+			console.log('totalReviews: ', totalReviews)
+			console.log('averageRating: ', averageRating)
 
 			try {
 				await ctx.prisma.build.update({

@@ -20,6 +20,11 @@ const config = {
         hostname: "cdn.discordapp.com",
         pathname: "/avatars/**",
       },
+      {
+        protocol: "https",
+        hostname: "static-cdn.jtvnw.net",
+        pathname: "/jtv_user_pictures/**",
+      },
     ],
   },
   experimental: {

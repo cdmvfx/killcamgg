@@ -11,7 +11,7 @@ const StatusBadge = (props: Props) => {
 			${status === "PENDING" ? "bg-neutral-500" : ""} 
 			${status === "APPROVED" ? "bg-emerald-500" : ""} 
 			${status === "REJECTED" ? "bg-red-500" : ""} 
-			w-fit rounded-full px-4`}
+			w-fit rounded-full px-4 py-1`}
     >
       {status}
     </div>
