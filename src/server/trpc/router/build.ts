@@ -1,13 +1,27 @@
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
+import { DateRange, Sort } from "../../../types/Filters";
 import { router, publicProcedure, protectedProcedure, modOrAdminProcedure } from "../trpc";
 
 export const buildRouter = router({
-	getAll: publicProcedure.query(async ({ ctx }) => {
-		try {
-			return await ctx.prisma.build.findMany({
+	getAll: publicProcedure
+		.input(z.object({
+			sort: z.string(),
+			dateRange: z.string(),
+			cursor: z.string().nullable(),
+			weaponId: z.number().nullable(),
+			attachmentIds: z.array(z.number()).nullable(),
+		}))
+		.query(async ({ input, ctx }) => {
+
+			const filters = {
+				take: 9,
+				skip: 0,
+				cursor: undefined as undefined | Prisma.BuildWhereUniqueInput,
 				where: {
 					status: "APPROVED"
-				},
+				} as Prisma.BuildWhereInput,
+				orderBy: {} as Prisma.BuildOrderByWithRelationInput,
 				include: {
 					weapon: true,
 					attachmentSetups: {
@@ -23,13 +37,92 @@ export const buildRouter = router({
 						}
 					}
 				}
-			});
-		}
-		catch (error) {
-			console.warn('Error in getAll: ');
-			console.log(error);
-		}
-	}),
+			};
+
+			if (input.weaponId) {
+				filters.where.weaponId = input.weaponId;
+			}
+
+			if (input.attachmentIds && input.attachmentIds.length > 0) {
+				filters.where.attachmentSetups = {
+					some: {
+						attachmentId: {
+							in: input.attachmentIds
+						}
+					}
+				}
+			}
+
+			if (input.cursor) {
+				filters.skip = 1;
+				filters.cursor = {
+					id: input.cursor
+				}
+			}
+
+			switch (input.dateRange) {
+				case DateRange.ThisWeek:
+					filters.where.updatedAt = {
+						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7), // last integer is the # of days
+						lte: new Date()
+					}
+					break;
+				case DateRange.ThisMonth:
+					filters.where.updatedAt = {
+						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30), // last integer is the # of days
+						lte: new Date()
+					}
+					break;
+				case DateRange.ThisYear:
+					filters.where.updatedAt = {
+						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365), // last integer is the # of days
+						lte: new Date()
+					}
+					break;
+			}
+
+			switch (input.sort) {
+				case Sort.Hot:
+					break;
+				case Sort.New:
+					filters.orderBy = {
+						createdAt: "desc"
+					}
+					break;
+				case Sort.Top:
+					filters.orderBy = {
+						totalReviews: "desc"
+					}
+					break;
+				case Sort.Worst:
+					filters.orderBy = {
+						reviews: {
+							_count: "asc"
+						}
+					}
+					break;
+			}
+
+			if (input.sort === "newest") {
+				filters.orderBy = {
+					createdAt: "desc"
+				}
+			}
+			else if (input.sort === "top") {
+				filters.orderBy = {
+					totalReviews: "desc"
+				}
+			}
+
+
+			try {
+				return await ctx.prisma.build.findMany(filters);
+			}
+			catch (error) {
+				console.warn('Error in getAll: ');
+				console.log(error);
+			}
+		}),
 	getAllPending: modOrAdminProcedure
 		.query(async ({ ctx }) => {
 			try {
