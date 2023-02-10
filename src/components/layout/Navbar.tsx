@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import PopperButton from "../ui/PopperButton";
 import { FaClock, FaFire, FaList, FaMedal, FaUpload } from "react-icons/fa";
+import { useRouter } from "next/router";
 
 const Navbar = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -23,15 +24,25 @@ const Navbar = () => {
       name: "Builds",
       href: "/builds",
       tooltip: <BuildMenu />,
+      children: [
+        {
+          name: "Hot Builds",
+          href: "/builds/?view=hot",
+        },
+        {
+          name: "New Builds",
+          href: "/builds/?view=new",
+        },
+        {
+          name: "Top Builds",
+          href: "/builds/?view=top",
+        },
+        {
+          name: "Worst Builds",
+          href: "/builds/?view=worst",
+        },
+      ],
     },
-    // {
-    //   name: "Users",
-    //   href: "/users",
-    // },
-    // {
-    //   name: "FAQ",
-    //   href: "/faq",
-    // },
   ];
 
   const modItems = [
@@ -40,6 +51,8 @@ const Navbar = () => {
       href: "/mod",
     },
   ];
+
+  const router = useRouter();
 
   const isAuthorized: boolean = session?.user
     ? session?.user.role === "MODERATOR" || session?.user.role === "ADMIN"
@@ -116,12 +129,6 @@ const Navbar = () => {
                 </div>
               </Link>
             )}
-            <div
-              onClick={() => alert("coming soon bitch")}
-              className="cursor-pointer pr-4 transition-all hover:text-orange-600"
-            >
-              <IoMdSearch />
-            </div>
           </div>
         </div>
       </div>
@@ -137,23 +144,17 @@ const Navbar = () => {
             key={`nav-item-${index}`}
             onClick={() => setIsDrawerOpen(false)}
           >
-            <div className="rounded-md p-4 font-jost transition-all hover:bg-neutral-900 hover:text-orange-600">
+            <div
+              className={`mb-4 rounded-md p-4 font-jost transition-all hover:bg-neutral-900 hover:text-orange-500 ${
+                item.href == router.pathname
+                  ? "bg-neutral-900 text-orange-500"
+                  : ""
+              }`}
+            >
               {item.name}
             </div>
           </Link>
         ))}
-        {isAuthorized &&
-          modItems.map((item, index) => (
-            <Link
-              href={item.href}
-              key={`nav-mod-item-${index}`}
-              onClick={() => setIsDrawerOpen(false)}
-            >
-              <div className="rounded-md p-4 font-jost transition-all hover:bg-neutral-900 hover:text-orange-600">
-                {item.name}
-              </div>
-            </Link>
-          ))}
       </Drawer>
       {session && session.user ? (
         <Drawer

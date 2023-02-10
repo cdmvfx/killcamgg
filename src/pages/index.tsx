@@ -3,7 +3,6 @@ import { useSession } from "next-auth/react";
 import { BuildGrid } from "../components/features/build";
 import Heading from "../components/ui/Heading";
 import { trpc } from "../utils/trpc";
-import { useRouter } from "next/router";
 import Link from "next/link";
 import Button from "../components/ui/Button";
 import { DateRange, Sort } from "../types/Filters";
@@ -18,8 +17,19 @@ const Home: NextPage = () => {
 
   const { data: builds, isLoading: isLoadingBuilds } =
     trpc.build.getAll.useQuery({
+      limit: 3,
       sort: Sort.Hot,
-      dateRange: DateRange.ThisWeek,
+      dateRange: DateRange.ThisMonth,
+      weaponId: null,
+      attachmentIds: null,
+      cursor: null,
+    });
+
+  const { data: topBuilds, isLoading: isLoadingTopBuilds } =
+    trpc.build.getAll.useQuery({
+      limit: 3,
+      sort: Sort.Top,
+      dateRange: DateRange.ThisMonth,
       weaponId: null,
       attachmentIds: null,
       cursor: null,
@@ -28,8 +38,6 @@ const Home: NextPage = () => {
   const userFavorites = user
     ? user.favorites.map((favorite) => favorite.id)
     : null;
-
-  const router = useRouter();
 
   return (
     <div className="flex w-full flex-col items-center py-4 px-4">
@@ -49,14 +57,16 @@ const Home: NextPage = () => {
                   <Button
                     text="Browse Builds"
                     variant="primary"
-                    classNames="px-6 text-xl"
+                    width="full"
+                    classNames="px-6 text-xl mb-4"
                   />
                 </Link>
                 {status !== "loading" && session && (
-                  <Link href="/submit">
+                  <Link href="/submit" className=" w-full md:w-auto">
                     <Button
                       text="Submit A Build"
                       variant="secondary"
+                      width="full"
                       classNames="px-6 text-xl"
                     />
                   </Link>
@@ -66,6 +76,7 @@ const Home: NextPage = () => {
                     <Button
                       text="Sign In"
                       variant="secondary"
+                      width="full"
                       classNames="px-6 text-xl"
                     />
                   </Link>
@@ -75,19 +86,42 @@ const Home: NextPage = () => {
             <div className="md:basis-1/2"></div>
           </div>
         </div>
-        <div className="">
+        <div className="mb-8">
           <Heading
-            primaryAction={{
-              label: "View All",
-              onClick: () => router.push("/builds"),
-            }}
+            primaryAction={
+              <Link
+                href={"/builds/?view=hot"}
+                className="transition-all hover:text-orange-500"
+              >
+                View All
+              </Link>
+            }
           >
-            Top Rated Builds
+            Hot Builds of the Month
           </Heading>
           {isLoadingBuilds || !builds ? (
             <Spinner />
           ) : (
             <BuildGrid builds={builds.items} userFavorites={userFavorites} />
+          )}
+        </div>
+        <div className="">
+          <Heading
+            primaryAction={
+              <Link
+                href={"/builds/?view=top"}
+                className="transition-all hover:text-orange-500"
+              >
+                View All
+              </Link>
+            }
+          >
+            Top Builds of the Month
+          </Heading>
+          {isLoadingTopBuilds || !topBuilds ? (
+            <Spinner />
+          ) : (
+            <BuildGrid builds={topBuilds.items} userFavorites={userFavorites} />
           )}
         </div>
       </div>

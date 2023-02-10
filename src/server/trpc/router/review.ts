@@ -68,35 +68,38 @@ export const reviewRouter = router({
 			}
 
 			// Calculate new average rating
-			const build = await ctx.prisma.build.findUnique({
-				where: { id: input.buildId },
-				include: {
-					reviews: {
-						select: {
-							isLike: true,
-							deletedAt: true
-						}
-					}
+			const reviews = await ctx.prisma.review.findMany({
+				where: {
+					buildId: input.buildId,
+					deletedAt: null
+				},
+				select: {
+					isLike: true
 				}
-			});
-
-			if (!build) return;
+			})
 
 			let totalLikes = 0;
+			let totalDislikes = 0;
+			let totalRatings = 0;
 			let totalReviews = 0;
 
-			for (const review of build.reviews) {
-				if (review.isLike) totalLikes++;
-				if (!review.deletedAt) totalReviews++;
+			for (const review of reviews) {
+				if (review.isLike === true) totalLikes++;
+				if (review.isLike === false) totalDislikes++;
+				if (review.isLike !== null) totalRatings++;
+				totalReviews++;
 			}
 
-			const averageRating = ((totalLikes / totalReviews) * 10) / 2 || 0;
+			const averageRating = ((totalLikes / totalRatings) * 10) / 2 || 0;
 
 			try {
 				await ctx.prisma.build.update({
 					where: { id: input.buildId },
 					data: {
 						averageRating,
+						totalLikes,
+						totalDislikes,
+						totalRatings,
 						totalReviews
 					}
 				})
@@ -134,44 +137,44 @@ export const reviewRouter = router({
 			}
 
 			// Calculate new average rating
-			const build = await ctx.prisma.build.findUnique({
-				where: { id: input.buildId },
-				include: {
-					reviews: {
-						select: {
-							isLike: true,
-							deletedAt: true
-						}
-					}
+			const reviews = await ctx.prisma.review.findMany({
+				where: {
+					buildId: input.buildId,
+					deletedAt: null
+				},
+				select: {
+					isLike: true
 				}
-			});
-
-			if (!build) return;
+			})
 
 			let totalLikes = 0;
+			let totalDislikes = 0;
+			let totalRatings = 0;
 			let totalReviews = 0;
 
-			for (const review of build.reviews) {
-				if (review.deletedAt) continue;
-				if (review.isLike) {
-					totalLikes++;
-				}
+			for (const review of reviews) {
+				if (review.isLike === true) totalLikes++;
+				if (review.isLike === false) totalDislikes++;
+				if (review.isLike !== null) totalRatings++;
 				totalReviews++;
 			}
 
-			const averageRating = ((totalLikes / totalReviews) * 10) / 2 || 0;
+			const averageRating = ((totalLikes / totalRatings) * 10) / 2 || 0;
 
 			try {
 				await ctx.prisma.build.update({
 					where: { id: input.buildId },
 					data: {
 						averageRating,
+						totalLikes,
+						totalDislikes,
+						totalRatings,
 						totalReviews
 					}
 				})
 			}
 			catch (error) {
-				console.log('Error calculating new average rating in review.postReview: ', error);
+				console.log('Error calculating new average rating in review.editReview: ', error);
 			}
 		}),
 	delete: protectedProcedure
@@ -197,44 +200,44 @@ export const reviewRouter = router({
 			}
 
 			// Calculate new average rating
-			const build = await ctx.prisma.build.findUnique({
-				where: { id: input.buildId },
-				include: {
-					reviews: {
-						select: {
-							isLike: true,
-							deletedAt: true
-						}
-					}
+			const reviews = await ctx.prisma.review.findMany({
+				where: {
+					buildId: input.buildId,
+					deletedAt: null
+				},
+				select: {
+					isLike: true
 				}
-			});
-
-			if (!build) return;
+			})
 
 			let totalLikes = 0;
+			let totalDislikes = 0;
+			let totalRatings = 0;
 			let totalReviews = 0;
 
-			for (const review of build.reviews) {
-				if (review.deletedAt) continue;
-				if (review.isLike) {
-					totalLikes++;
-				}
+			for (const review of reviews) {
+				if (review.isLike === true) totalLikes++;
+				if (review.isLike === false) totalDislikes++;
+				if (review.isLike !== null) totalRatings++;
 				totalReviews++;
 			}
 
-			const averageRating = ((totalLikes / totalReviews) * 10) / 2 || 0;
+			const averageRating = ((totalLikes / totalRatings) * 10) / 2 || 0;
 
 			try {
 				await ctx.prisma.build.update({
 					where: { id: input.buildId },
 					data: {
 						averageRating,
+						totalLikes,
+						totalDislikes,
+						totalRatings,
 						totalReviews
 					}
 				})
 			}
 			catch (error) {
-				console.log('Error calculating new average rating in review.postReview: ', error);
+				console.log('Error calculating new average rating in review.deleteReview: ', error);
 			}
 		}),
 	like: protectedProcedure
@@ -305,48 +308,44 @@ export const reviewRouter = router({
 			}
 
 			// Calculate new average rating
-			const build = await ctx.prisma.build.findUnique({
-				where: { id: input.buildId },
-				include: {
-					reviews: {
-						select: {
-							isLike: true,
-							deletedAt: true
-						}
-					}
+			const reviews = await ctx.prisma.review.findMany({
+				where: {
+					buildId: input.buildId,
+					deletedAt: null
+				},
+				select: {
+					isLike: true
 				}
-			});
-
-			if (!build) return;
+			})
 
 			let totalLikes = 0;
+			let totalDislikes = 0;
+			let totalRatings = 0;
 			let totalReviews = 0;
 
-			for (const review of build.reviews) {
-				if (review.deletedAt) continue;
-				if (review.isLike) {
-					totalLikes++;
-				}
+			for (const review of reviews) {
+				if (review.isLike === true) totalLikes++;
+				if (review.isLike === false) totalDislikes++;
+				if (review.isLike !== null) totalRatings++;
 				totalReviews++;
 			}
 
-			const averageRating = ((totalLikes / totalReviews) * 10) / 2 || 0;
-
-			console.log('totalLikes: ', totalLikes)
-			console.log('totalReviews: ', totalReviews)
-			console.log('averageRating: ', averageRating)
+			const averageRating = ((totalLikes / totalRatings) * 10) / 2 || 0;
 
 			try {
 				await ctx.prisma.build.update({
 					where: { id: input.buildId },
 					data: {
 						averageRating,
+						totalLikes,
+						totalDislikes,
+						totalRatings,
 						totalReviews
 					}
 				})
 			}
 			catch (error) {
-				console.log('Error calculating new average rating in review.postReview: ', error);
+				console.log('Error calculating new average rating in review.changeLike: ', error);
 			}
 		})
 })

@@ -15,6 +15,9 @@ export const userRouter = router({
 					select: {
 						name: true,
 						image: true,
+						rank: true,
+						role: true,
+						isVerified: true,
 						createdAt: true,
 						id: true,
 						builds: {

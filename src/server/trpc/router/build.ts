@@ -1,11 +1,13 @@
-import type { Prisma } from "@prisma/client";
+import type { Build, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { DateRange, Sort } from "../../../types/Filters";
+import hot from "../../../utils/ranking";
 import { router, publicProcedure, protectedProcedure, modOrAdminProcedure } from "../trpc";
 
 export const buildRouter = router({
 	getAll: publicProcedure
 		.input(z.object({
+			limit: z.number(),
 			sort: z.string(),
 			dateRange: z.string(),
 			cursor: z.string().nullish(),
@@ -14,7 +16,7 @@ export const buildRouter = router({
 		}))
 		.query(async ({ input, ctx }) => {
 
-			const limit = 9;
+			const limit = input.limit;
 
 			const filters = {
 				take: limit + 1,
@@ -57,19 +59,19 @@ export const buildRouter = router({
 			switch (input.dateRange) {
 				case DateRange.ThisWeek:
 					filters.where.updatedAt = {
-						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7), // last integer is the # of days
+						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
 						lte: new Date()
 					}
 					break;
 				case DateRange.ThisMonth:
 					filters.where.updatedAt = {
-						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30), // last integer is the # of days
+						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
 						lte: new Date()
 					}
 					break;
 				case DateRange.ThisYear:
 					filters.where.updatedAt = {
-						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365), // last integer is the # of days
+						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365),
 						lte: new Date()
 					}
 					break;
@@ -85,36 +87,38 @@ export const buildRouter = router({
 					break;
 				case Sort.Top:
 					filters.orderBy = {
-						totalReviews: "desc"
+						totalLikes: "desc"
 					}
 					break;
 				case Sort.Worst:
 					filters.orderBy = {
-						reviews: {
-							_count: "asc"
-						}
+						totalDislikes: "desc"
 					}
 					break;
 			}
 
-			if (input.sort === "newest") {
-				filters.orderBy = {
-					createdAt: "desc"
-				}
-			}
-			else if (input.sort === "top") {
-				filters.orderBy = {
-					totalReviews: "desc"
-				}
-			}
-
 			try {
-				const items = await ctx.prisma.build.findMany(filters);
+				let items = await ctx.prisma.build.findMany(filters);
+
+				if (input.sort === Sort.Hot) {
+
+					items = items.map((item) => {
+
+						const score = hot(item.totalLikes, item.totalDislikes, item.createdAt);
+
+						return {
+							item,
+							score
+						}
+
+					}).sort((a, b) => b.score - a.score).map((item) => item.item);
+
+				}
 
 				let nextCursor: typeof input.cursor | undefined = undefined;
 				if (items.length > limit) {
-					const nextItem = items.pop()
-					nextCursor = nextItem!.id;
+					const nextItem = items.pop() as Build
+					nextCursor = nextItem.id;
 				}
 
 				return {

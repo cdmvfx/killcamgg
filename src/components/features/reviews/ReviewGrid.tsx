@@ -40,12 +40,14 @@ const ReviewGridItem = (props: ReviewGridItemProps) => {
           {review.build.title}
         </Link>
       </div>
-      <div>
+      <div className="flex items-center gap-4">
         {review.isLike === true && <MdThumbUp className="text-emerald-500" />}
         {review.isLike === false && <MdThumbDown className="text-red-500" />}
-        {review.updatedAt.getTime() > review.createdAt.getTime()
-          ? review.updatedAt.toISOString().slice(0, 10)
-          : review.createdAt.toISOString().slice(0, 10)}
+        <span className="text-xs">
+          {review.updatedAt.getTime() > review.createdAt.getTime()
+            ? review.updatedAt.toISOString().slice(0, 10)
+            : review.createdAt.toISOString().slice(0, 10)}
+        </span>
       </div>
       <div>{review.content}</div>
     </div>

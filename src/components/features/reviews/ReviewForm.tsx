@@ -14,6 +14,7 @@ import {
 import type { ReviewFromBuildGetOneResult } from "../../../types/Reviews";
 import type { Session } from "next-auth";
 import ModalButton from "../../ui/ModalButton";
+import Button from "../../ui/Button";
 
 type ReviewFormProps = {
   build: Build;
@@ -207,20 +208,22 @@ const ReviewForm = (props: ReviewFormProps) => {
           <Spinner />
         ) : (
           <div className="flex justify-end gap-4">
-            <button className="mb-0 w-fit" onClick={handleSubmitClick}>
-              {existingReview ? "Publish" : "Publish"}
-            </button>
+            <Button
+              text={existingReview ? "Publish" : "Publish"}
+              onClick={handleSubmitClick}
+            />
             {existingReview && !existingReview.deletedAt && (
               <>
-                <button
-                  className="secondary mb-0 w-fit"
+                <Button
+                  text="Delete"
+                  variant="tertiary"
                   onClick={handleDeleteClick}
-                >
-                  Delete
-                </button>
-                <button className="tertiary w-fit" onClick={handleCancelClick}>
-                  Cancel
-                </button>
+                />
+                <Button
+                  text="Cancel"
+                  variant="tertiary"
+                  onClick={handleCancelClick}
+                />
               </>
             )}
           </div>
@@ -238,12 +241,12 @@ const ReviewForm = (props: ReviewFormProps) => {
             <Spinner />
           ) : (
             <>
-              <button className="w-full" onClick={handleDeleteFinal}>
-                Delete
-              </button>
-              <button className="secondary w-full" onClick={handleDeleteCancel}>
-                Cancel
-              </button>
+              <Button text="Delete" onClick={handleDeleteFinal} />
+              <Button
+                text="Cancel"
+                variant="tertiary"
+                onClick={handleDeleteCancel}
+              />
             </>
           )}
         </div>

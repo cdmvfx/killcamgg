@@ -20,13 +20,16 @@ const BuildsPage = () => {
     "view",
     queryTypes.stringEnum<Sort>(Object.values(Sort)).withDefault(Sort.Hot)
   );
-  const [cursor, setCursor] = useState<string | null>(null);
 
   const { data: weapons, isLoading: isLoadingWeapons } =
-    trpc.weapon.getAll.useQuery();
+    trpc.weapon.getAll.useQuery(undefined, {
+      staleTime: 1000 * 60 * 60,
+    });
 
   const { data: attachments, isLoading: isLoadingAttachments } =
-    trpc.attachment.getAll.useQuery();
+    trpc.attachment.getAll.useQuery(undefined, {
+      staleTime: 1000 * 60 * 60,
+    });
 
   const {
     isLoading: isLoadingBuilds,
@@ -35,6 +38,7 @@ const BuildsPage = () => {
     hasNextPage,
   } = trpc.build.getAll.useInfiniteQuery(
     {
+      limit: sortBy === Sort.Hot ? 36 : 9,
       weaponId: selectedWeapon?.id || null,
       attachmentIds:
         selectedAttachments.map((attachment) => attachment.id) || null,
@@ -58,6 +62,9 @@ const BuildsPage = () => {
 
   const handleViewChange = (view: Sort) => {
     switch (view) {
+      case Sort.Hot:
+        setDateRange(DateRange.ThisMonth);
+        break;
       case Sort.New:
         setDateRange(DateRange.AllTime);
         break;
@@ -67,41 +74,29 @@ const BuildsPage = () => {
       shallow: true,
       scroll: false,
     });
-    setCursor(null);
   };
 
   const handleWeaponChange = (weapon: Weapon | null) => {
     setSelectedWeapon(weapon);
-    setCursor(null);
   };
 
   const handleAttachmentsChange = (attachments: Attachment | Attachment[]) => {
     if (Array.isArray(attachments)) {
       setSelectedAttachments(attachments);
     } else {
-      setSelectedAttachments((selected) => [...selected, attachments]);
+      setSelectedAttachments((selected) =>
+        selected.filter((a) => a.id !== attachments.id)
+      );
     }
-
-    setCursor(null);
   };
 
   const handleDateRangeChange = (dateRange: DateRange) => {
     setDateRange(dateRange);
-    setCursor(null);
   };
 
   const handleFetchNextPage = () => {
     fetchNextPage();
   };
-
-  console.log("Filters", {
-    selectedWeapon,
-    selectedAttachments,
-    dateRange,
-    sortBy,
-    cursor,
-  });
-  console.log("Results", builds);
 
   return (
     <div className="py-4">
