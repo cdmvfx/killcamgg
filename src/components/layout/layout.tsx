@@ -5,9 +5,9 @@ import Navbar from "./Navbar";
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <LoadingScreen />
       <Navbar />
       <main>
+        {/* <LoadingScreen /> */}
         <div id="content">{children}</div>
       </main>
       <Footer />

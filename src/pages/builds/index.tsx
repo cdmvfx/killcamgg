@@ -1,29 +1,50 @@
-import { FilteredBuildGrid } from "../../components/features/build";
+import { BuildGrid } from "../../components/features/build";
 import { useState } from "react";
 import type { Attachment, Weapon } from "@prisma/client";
 import { trpc } from "../../utils/trpc";
 import Spinner from "../../components/ui/Spinner";
-import type { SortOption } from "../../types/Filters";
+import { DateRange, Sort } from "../../types/Filters";
 import { useSession } from "next-auth/react";
 import BuildFilters from "../../components/features/build/BuildFilters";
-import type { WeaponsByCategory } from "../../types/Weapons";
-import type { AttachmentsByCategory } from "../../types/Attachments";
+import type { BuildWithReviewsAndAuthor } from "../../types/Builds";
+import Button from "../../components/ui/Button";
+import { queryTypes, useQueryState } from "next-usequerystate";
 
-const Builds = () => {
+const BuildsPage = () => {
   const [selectedWeapon, setSelectedWeapon] = useState<Weapon | null>(null);
   const [selectedAttachments, setSelectedAttachments] = useState<Attachment[]>(
     []
   );
-  const [sortBy, setSortBy] = useState<SortOption>({
-    name: "Newest",
-    value: "newest",
-  });
+  const [dateRange, setDateRange] = useState(DateRange.ThisWeek);
+  const [sortBy, setSortBy] = useQueryState(
+    "view",
+    queryTypes.stringEnum<Sort>(Object.values(Sort)).withDefault(Sort.Hot)
+  );
+  const [cursor, setCursor] = useState<string | null>(null);
 
-  const { data: weaponsByCategory, isLoading: isLoadingWeapons } =
-    trpc.weapon.getAllByCategory.useQuery();
+  const { data: weapons, isLoading: isLoadingWeapons } =
+    trpc.weapon.getAll.useQuery();
 
-  const { data: attachmentsByCategory, isLoading: isLoadingAttachments } =
-    trpc.attachment.getAllByCategory.useQuery();
+  const { data: attachments, isLoading: isLoadingAttachments } =
+    trpc.attachment.getAll.useQuery();
+
+  const {
+    isLoading: isLoadingBuilds,
+    data,
+    fetchNextPage,
+    hasNextPage,
+  } = trpc.build.getAll.useInfiniteQuery(
+    {
+      weaponId: selectedWeapon?.id || null,
+      attachmentIds:
+        selectedAttachments.map((attachment) => attachment.id) || null,
+      sort: sortBy,
+      dateRange: dateRange,
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage?.nextCursor || null,
+    }
+  );
 
   const { data: session } = useSession();
 
@@ -33,37 +54,98 @@ const Builds = () => {
 
   const userFavorites = user?.favorites.map((favorite) => favorite.id) || null;
 
+  const builds = data?.pages.map((page) => page?.items).flat() || [];
+
+  const handleViewChange = (view: Sort) => {
+    switch (view) {
+      case Sort.New:
+        setDateRange(DateRange.AllTime);
+        break;
+    }
+
+    setSortBy(view, {
+      shallow: true,
+      scroll: false,
+    });
+    setCursor(null);
+  };
+
+  const handleWeaponChange = (weapon: Weapon | null) => {
+    setSelectedWeapon(weapon);
+    setCursor(null);
+  };
+
+  const handleAttachmentsChange = (attachments: Attachment | Attachment[]) => {
+    if (Array.isArray(attachments)) {
+      setSelectedAttachments(attachments);
+    } else {
+      setSelectedAttachments((selected) => [...selected, attachments]);
+    }
+
+    setCursor(null);
+  };
+
+  const handleDateRangeChange = (dateRange: DateRange) => {
+    setDateRange(dateRange);
+    setCursor(null);
+  };
+
+  const handleFetchNextPage = () => {
+    fetchNextPage();
+  };
+
+  console.log("Filters", {
+    selectedWeapon,
+    selectedAttachments,
+    dateRange,
+    sortBy,
+    cursor,
+  });
+  console.log("Results", builds);
+
   return (
     <div className="py-4">
       <div className="px-4">
         <h1 className="mb-4">Browse All Builds</h1>
-        {isLoadingWeapons && isLoadingAttachments ? (
+        {isLoadingWeapons ||
+        isLoadingAttachments ||
+        !weapons ||
+        !attachments ? (
           <Spinner />
         ) : (
           <>
             <BuildFilters
-              weaponsByCategory={weaponsByCategory as WeaponsByCategory}
+              weapons={weapons}
               selectedWeapon={selectedWeapon}
-              setSelectedWeapon={setSelectedWeapon}
-              attachmentsByCategory={
-                attachmentsByCategory as AttachmentsByCategory
-              }
+              handleWeaponChange={handleWeaponChange}
+              attachments={attachments}
               selectedAttachments={selectedAttachments}
-              setSelectedAttachments={setSelectedAttachments}
+              handleAttachmentsChange={handleAttachmentsChange}
               sortBy={sortBy}
-              setSortBy={setSortBy}
+              handleViewChange={handleViewChange}
+              dateRange={dateRange}
+              handleDateRangeChange={handleDateRangeChange}
             />
-            <FilteredBuildGrid
-              userFavorites={userFavorites}
-              selectedWeapon={selectedWeapon}
-              selectedAttachments={selectedAttachments}
-              sortBy={sortBy}
-            />
+            {isLoadingBuilds || !data?.pages ? (
+              <Spinner />
+            ) : (
+              <BuildGrid
+                builds={builds as BuildWithReviewsAndAuthor[]}
+                userFavorites={userFavorites}
+              />
+            )}
           </>
+        )}
+        {hasNextPage && (
+          <Button
+            classNames="mt-4 mx-auto"
+            onClick={handleFetchNextPage}
+            text="Load More Builds"
+          />
         )}
       </div>
     </div>
   );
 };
 
-export default Builds;
+export default BuildsPage;

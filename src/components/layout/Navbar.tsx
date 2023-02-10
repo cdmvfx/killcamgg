@@ -184,13 +184,6 @@ const Navbar = () => {
   );
 };
 
-type NavPopoverProps = {
-  item: {
-    name: string;
-    href: string;
-  };
-};
-
 const BuildMenu = () => {
   return (
     <div className="max-w-md">
@@ -201,7 +194,7 @@ const BuildMenu = () => {
       </div>
       <div className="grid grid-cols-2 grid-rows-3 gap-4">
         <Link
-          href={`/builds/hot`}
+          href={`/builds/?view=hot`}
           className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
         >
           <div>
@@ -210,7 +203,7 @@ const BuildMenu = () => {
           <div>Hot Builds</div>
         </Link>
         <Link
-          href={`/builds/top`}
+          href={`/builds/?view=top`}
           className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
         >
           <div>
@@ -219,7 +212,7 @@ const BuildMenu = () => {
           <div>Top Builds</div>
         </Link>
         <Link
-          href={`/builds/new`}
+          href={`/builds/?view=new`}
           className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
         >
           <div>
@@ -228,13 +221,13 @@ const BuildMenu = () => {
           <div>New Builds</div>
         </Link>
         <Link
-          href={`/builds/all`}
+          href={`/builds/?view=worst`}
           className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
         >
           <div>
             <FaList />
           </div>
-          <div>All Builds</div>
+          <div>Worst Builds</div>
         </Link>
         <Link
           href={`/builds/submit`}

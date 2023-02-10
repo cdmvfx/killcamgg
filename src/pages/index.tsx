@@ -1,11 +1,13 @@
 import { type NextPage } from "next";
 import { useSession } from "next-auth/react";
-import { FilteredBuildGrid } from "../components/features/build";
+import { BuildGrid } from "../components/features/build";
 import Heading from "../components/ui/Heading";
 import { trpc } from "../utils/trpc";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import Button from "../components/ui/Button";
+import { DateRange, Sort } from "../types/Filters";
+import Spinner from "../components/ui/Spinner";
 
 const Home: NextPage = () => {
   const { data: session, status } = useSession();
@@ -13,6 +15,15 @@ const Home: NextPage = () => {
   const { data: user } = trpc.user.getOne.useQuery({
     id: session?.user?.id ?? null,
   });
+
+  const { data: builds, isLoading: isLoadingBuilds } =
+    trpc.build.getAll.useQuery({
+      sort: Sort.Hot,
+      dateRange: DateRange.ThisWeek,
+      weaponId: null,
+      attachmentIds: null,
+      cursor: null,
+    });
 
   const userFavorites = user
     ? user.favorites.map((favorite) => favorite.id)
@@ -73,10 +84,11 @@ const Home: NextPage = () => {
           >
             Top Rated Builds
           </Heading>
-          <FilteredBuildGrid
-            userFavorites={userFavorites}
-            sortBy={{ name: "Rating (High to Low)", value: "rating-desc" }}
-          />
+          {isLoadingBuilds || !builds ? (
+            <Spinner />
+          ) : (
+            <BuildGrid builds={builds.items} userFavorites={userFavorites} />
+          )}
         </div>
       </div>
     </div>

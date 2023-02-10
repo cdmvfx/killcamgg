@@ -8,16 +8,17 @@ export const buildRouter = router({
 		.input(z.object({
 			sort: z.string(),
 			dateRange: z.string(),
-			cursor: z.string().nullable(),
+			cursor: z.string().nullish(),
 			weaponId: z.number().nullable(),
 			attachmentIds: z.array(z.number()).nullable(),
 		}))
 		.query(async ({ input, ctx }) => {
 
+			const limit = 9;
+
 			const filters = {
-				take: 9,
-				skip: 0,
-				cursor: undefined as undefined | Prisma.BuildWhereUniqueInput,
+				take: limit + 1,
+				cursor: input.cursor ? { id: input.cursor } : undefined,
 				where: {
 					status: "APPROVED"
 				} as Prisma.BuildWhereInput,
@@ -50,13 +51,6 @@ export const buildRouter = router({
 							in: input.attachmentIds
 						}
 					}
-				}
-			}
-
-			if (input.cursor) {
-				filters.skip = 1;
-				filters.cursor = {
-					id: input.cursor
 				}
 			}
 
@@ -114,9 +108,19 @@ export const buildRouter = router({
 				}
 			}
 
-
 			try {
-				return await ctx.prisma.build.findMany(filters);
+				const items = await ctx.prisma.build.findMany(filters);
+
+				let nextCursor: typeof input.cursor | undefined = undefined;
+				if (items.length > limit) {
+					const nextItem = items.pop()
+					nextCursor = nextItem!.id;
+				}
+
+				return {
+					items,
+					nextCursor
+				}
 			}
 			catch (error) {
 				console.warn('Error in getAll: ');

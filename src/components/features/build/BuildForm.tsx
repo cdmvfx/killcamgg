@@ -19,6 +19,7 @@ import Spinner from "../../ui/Spinner";
 import { Listbox, Transition } from "@headlessui/react";
 import { IoMdClose } from "react-icons/io";
 import { FaArrowsAltH, FaArrowsAltV } from "react-icons/fa";
+import Button from "../../ui/Button";
 
 type FormErrors = {
   [key: string]: string[];
@@ -217,14 +218,9 @@ const BuildForm = (props: BuildFormProps) => {
         .max(50, {
           message: "Title must be less than 50 characters.",
         }),
-      description: z
-        .string()
-        .min(50, {
-          message: "Description must be at least 50 characters.",
-        })
-        .max(500, {
-          message: "Description must be less than 500 characters.",
-        }),
+      description: z.string().min(50, {
+        message: "Description must be at least 50 characters.",
+      }),
       weaponId: z.number({
         required_error: "You must select a weapon.",
       }),
@@ -318,7 +314,6 @@ const BuildForm = (props: BuildFormProps) => {
             value={description}
             placeholder="Give your build a description! Include details like your playstyle, what you like about the build, why you chose certain attachments, etc."
             minLength={5}
-            maxLength={100}
             rows={4}
             onChange={(e) => setDescription(e.target.value)}
             className=""
@@ -341,7 +336,9 @@ const BuildForm = (props: BuildFormProps) => {
                   <div>Weapon</div>
                 </Listbox.Label>
                 <Listbox.Button
-                  className={"mb-4 w-full bg-black bg-opacity-50"}
+                  className={
+                    "w-full rounded-lg border border-orange-500 bg-black bg-opacity-50 py-4"
+                  }
                 >
                   {selectedWeapon ? selectedWeapon.name : "Select a weapon"}
                 </Listbox.Button>
@@ -352,7 +349,7 @@ const BuildForm = (props: BuildFormProps) => {
                   leave="transform transition duration-150 ease-in-out"
                   leaveFrom="scale-100 opacity-100"
                   leaveTo="scale-0 opacity-0"
-                  className={`absolute top-[70px] z-10 max-h-64 w-full cursor-pointer overflow-y-scroll rounded-md shadow-xl`}
+                  className={`absolute z-10 max-h-64 w-full cursor-pointer overflow-y-scroll rounded-md shadow-xl`}
                 >
                   <Listbox.Options className={`w-full bg-neutral-800`}>
                     {Object.keys(weaponsByCategory).map((category) => (
@@ -436,7 +433,11 @@ const BuildForm = (props: BuildFormProps) => {
                             >
                               <IoMdClose />
                             </button>
-                            <Listbox.Button className={"mb-0 w-full"}>
+                            <Listbox.Button
+                              className={
+                                "w-full rounded-lg border border-orange-500 py-2"
+                              }
+                            >
                               {selectedAttachments[index]?.attachment ? (
                                 <>
                                   <label>
@@ -557,9 +558,12 @@ const BuildForm = (props: BuildFormProps) => {
                   }
                 )}
                 {numOfAttachments < 5 && (
-                  <button className="tertiary w-full" onClick={addAttachment}>
-                    Add attachment
-                  </button>
+                  <Button
+                    classNames="mx-auto"
+                    variant="tertiary"
+                    text="Add attachment"
+                    onClick={addAttachment}
+                  />
                 )}
                 {errors.attachmentIds &&
                   errors.attachmentIds.map((error, index) => (
@@ -591,20 +595,23 @@ const BuildForm = (props: BuildFormProps) => {
             <Spinner />
           ) : !showDeleteAlert ? (
             <>
-              <button className="w-full" onClick={submitBuild}>
-                {existingBuild ? "Save Build" : "Submit Build"}
-              </button>
+              <Button
+                text={existingBuild ? "Save Build" : "Submit Build"}
+                onClick={submitBuild}
+                width="full"
+              />
               {existingBuild && (
                 <>
-                  <button
-                    className="secondary w-full"
+                  <Button
+                    variant="secondary"
                     onClick={clickDeleteBuild}
-                  >
-                    Delete Build
-                  </button>
-                  <button className="tertiary w-full" onClick={cancelBuildEdit}>
-                    Cancel
-                  </button>
+                    text="Delete Build"
+                  />
+                  <Button
+                    text="Cancel"
+                    variant="tertiary"
+                    onClick={cancelBuildEdit}
+                  />
                 </>
               )}
             </>
@@ -615,12 +622,17 @@ const BuildForm = (props: BuildFormProps) => {
                 message="Are you sure you want to delete this build? This process is not reversable."
                 className="mb-2"
               />
-              <button className="w-full" onClick={clickDeleteBuildFinal}>
-                Delete Build
-              </button>
-              <button className="secondary w-full" onClick={clickDeleteCancel}>
-                Cancel
-              </button>
+              <Button
+                text="Delete Build"
+                variant="primary"
+                onClick={clickDeleteBuildFinal}
+              />
+
+              <Button
+                text="Cancel"
+                variant="secondary"
+                onClick={clickDeleteCancel}
+              />
             </>
           )}
         </div>

@@ -1,83 +1,56 @@
 import { useState } from "react";
-import { Listbox, Transition, Combobox } from "@headlessui/react";
-import type {
-  Attachment,
-  AttachmentCategory,
-  Weapon,
-  WeaponCategory,
-} from "@prisma/client";
-import type { WeaponsByCategory } from "../../../types/Weapons";
-import type { AttachmentsByCategory } from "../../../types/Attachments";
-import type { DateRange, Sort } from "../../../types/Filters";
+import { Combobox } from "@headlessui/react";
+import type { Attachment, Weapon } from "@prisma/client";
+import { type DateRange, Sort } from "../../../types/Filters";
 import { sortOptions, dateRangeOptions } from "../../../lib/filterOptions";
-import Button from "../../../components/ui/Button";
 import { FaTimes } from "react-icons/fa";
-import type { Dispatch, SetStateAction } from "react";
 
 type BuildFiltersProps = {
-  weaponsByCategory: WeaponsByCategory;
+  weapons: Weapon[];
   selectedWeapon: Weapon | null;
-  setSelectedWeapon: (weapons: Weapon | null) => void;
-  attachmentsByCategory: AttachmentsByCategory;
+  handleWeaponChange: (weapon: Weapon | null) => void;
+  attachments: Attachment[];
   selectedAttachments: Attachment[];
-  setSelectedAttachments: Dispatch<SetStateAction<Attachment[]>>;
+  handleAttachmentsChange: (attachments: Attachment | Attachment[]) => void;
   sortBy: Sort;
-  setSortBy: (sortBy: Sort) => void;
+  handleViewChange: (view: Sort) => void;
   dateRange: DateRange;
-  setDateRange: (dateRange: DateRange) => void;
+  handleDateRangeChange: (dateRange: DateRange) => void;
 };
 
 const BuildFilters = (props: BuildFiltersProps) => {
   const {
-    weaponsByCategory,
+    weapons,
     selectedWeapon,
-    setSelectedWeapon,
-    attachmentsByCategory,
+    handleWeaponChange,
+    attachments,
     selectedAttachments,
-    setSelectedAttachments,
+    handleAttachmentsChange,
     sortBy,
-    setSortBy,
+    handleViewChange,
     dateRange,
-    setDateRange,
+    handleDateRangeChange,
   } = props;
-
-  const [openWeaponCategory, setOpenWeaponCategory] = useState<string | null>(
-    null
-  );
-
-  const [openAttachmentCategory, setOpenAttachmentCategory] = useState<
-    string | null
-  >(null);
 
   const [weaponQuery, setWeaponQuery] = useState("");
   const [attachmentQuery, setAttachmentQuery] = useState("");
 
-  const allWeapons = Object.values(weaponsByCategory).flat();
-
   const filteredWeapons =
     weaponQuery === ""
-      ? allWeapons.slice(0, 10)
-      : allWeapons
-          .filter((weapon) =>
-            weapon.name.toLowerCase().includes(weaponQuery.toLowerCase())
-          )
-          .slice(0, 10);
-
-  const allAttachments = Object.values(attachmentsByCategory).flat();
+      ? weapons
+      : weapons.filter((weapon) =>
+          weapon.name.toLowerCase().includes(weaponQuery.toLowerCase())
+        );
 
   const filteredAttachments =
     attachmentQuery === ""
-      ? allAttachments.slice(0, 10)
-      : allAttachments
-          .filter((attachment) =>
-            attachment.name
-              .toLowerCase()
-              .includes(attachmentQuery.toLowerCase())
-          )
-          .slice(0, 10);
+      ? attachments
+      : attachments.filter((attachment) =>
+          attachment.name.toLowerCase().includes(attachmentQuery.toLowerCase())
+        );
 
-  const removeSelectedAttachment = (id: number) => {
-    setSelectedAttachments((prev) => prev.filter((att) => att.id !== id));
+  const removeSelectedAttachment = (attachment: Attachment) => {
+    handleAttachmentsChange(attachment);
   };
 
   return (
@@ -93,7 +66,7 @@ const BuildFilters = (props: BuildFiltersProps) => {
                   ? "bg-orange-600 hover:bg-orange-500"
                   : "bg-neutral-800 hover:bg-neutral-700"
               }`}
-              onClick={() => setSortBy(option.value as Sort)}
+              onClick={() => handleViewChange(option.value as Sort)}
             >
               {option.name}
             </div>
@@ -102,22 +75,26 @@ const BuildFilters = (props: BuildFiltersProps) => {
         <div>Weapon</div>
         <div className="flex items-center gap-4">
           <div>
-            <Combobox value={selectedWeapon} onChange={setSelectedWeapon}>
+            <Combobox
+              value={selectedWeapon}
+              onChange={(val) => handleWeaponChange(val)}
+            >
               <div className="relative">
                 {selectedWeapon ? (
                   <div
-                    onClick={() => setSelectedWeapon(null)}
+                    onClick={() => handleWeaponChange(null)}
                     className="flex cursor-pointer items-center gap-2 rounded bg-neutral-800 py-2 px-4 transition-all hover:bg-neutral-700"
                   >
                     {selectedWeapon.name} <FaTimes />
                   </div>
                 ) : (
                   <Combobox.Input
+                    type="search"
                     placeholder="Search for a weapon..."
                     onChange={(event) => setWeaponQuery(event.target.value)}
                   />
                 )}
-                <Combobox.Options className="absolute z-50 w-full rounded bg-neutral-800">
+                <Combobox.Options className="absolute z-50 max-h-80 w-full overflow-y-scroll rounded bg-neutral-800">
                   {filteredWeapons.map((weapon) => (
                     <Combobox.Option
                       key={`weapon-id-${weapon.id}`}
@@ -138,16 +115,17 @@ const BuildFilters = (props: BuildFiltersProps) => {
             <Combobox
               multiple
               value={selectedAttachments}
-              onChange={(val) => setSelectedAttachments(val)}
+              onChange={(val) => handleAttachmentsChange(val)}
             >
               <div className="relative">
                 {selectedAttachments.length < 6 && (
                   <Combobox.Input
+                    type="search"
                     placeholder="Search for an attachment..."
                     onChange={(event) => setAttachmentQuery(event.target.value)}
                   />
                 )}
-                <Combobox.Options className="absolute w-full rounded bg-neutral-800">
+                <Combobox.Options className="absolute z-50 max-h-80 w-full overflow-y-scroll rounded bg-neutral-800">
                   {filteredAttachments.map((attachment) => (
                     <Combobox.Option
                       key={`weapon-id-${attachment.id}`}
@@ -172,7 +150,7 @@ const BuildFilters = (props: BuildFiltersProps) => {
                   selectedAttachments.map((attachment) => (
                     <div
                       key={`selected-attachment-id-${attachment.id}`}
-                      onClick={() => removeSelectedAttachment(attachment.id)}
+                      onClick={() => removeSelectedAttachment(attachment)}
                       className="flex cursor-pointer items-center gap-2 rounded bg-neutral-800 py-2 px-4 transition-all hover:bg-neutral-700"
                     >
                       {attachment.name} <FaTimes />
@@ -182,22 +160,28 @@ const BuildFilters = (props: BuildFiltersProps) => {
             </Combobox>
           </div>
         </div>
-        <div>Date Range</div>
-        <div className="flex gap-4">
-          {dateRangeOptions.map((option) => (
-            <div
-              key={`date-range-option-${option.value}`}
-              className={`flex cursor-pointer items-center gap-2 rounded py-2 px-4 transition-all  ${
-                dateRange === option.value
-                  ? "bg-orange-600 hover:bg-orange-500"
-                  : "bg-neutral-800 hover:bg-neutral-700"
-              }`}
-              onClick={() => setDateRange(option.value as DateRange)}
-            >
-              {option.name}
+        {sortBy !== Sort.New && (
+          <>
+            <div>Date Range</div>
+            <div className="flex gap-4">
+              {dateRangeOptions.map((option) => (
+                <div
+                  key={`date-range-option-${option.value}`}
+                  className={`flex cursor-pointer items-center gap-2 rounded py-2 px-4 transition-all  ${
+                    dateRange === option.value
+                      ? "bg-orange-600 hover:bg-orange-500"
+                      : "bg-neutral-800 hover:bg-neutral-700"
+                  }`}
+                  onClick={() =>
+                    handleDateRangeChange(option.value as DateRange)
+                  }
+                >
+                  {option.name}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
