@@ -13,6 +13,8 @@ import type {
   GetServerSidePropsContext,
   InferGetServerSidePropsType,
 } from "next";
+import { FaCheckCircle } from "react-icons/fa";
+import PopperButton from "../components/ui/PopperButton";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
@@ -28,9 +30,6 @@ const ProfilePage: NextPage<PageProps> = (props) => {
     {
       initialData: userData,
       enabled: false,
-      onSuccess: () => {
-        console.log("Fetched profile data.");
-      },
     }
   );
 
@@ -40,7 +39,35 @@ const ProfilePage: NextPage<PageProps> = (props) => {
 
   const userFavorites = user.favorites.map((favorite) => favorite.id);
 
-  console.log("User data", user);
+  const roleBadge = () => {
+    switch (user.role) {
+      case "ADMIN":
+        return <span className="rounded-full bg-orange-600 px-2">Admin</span>;
+      case "MODERATOR":
+        return (
+          <span className="rounded-full bg-orange-600 px-2">Moderator</span>
+        );
+      case "CREATOR":
+        return <span className="rounded-full bg-orange-600 px-2">Creator</span>;
+      default:
+        <></>;
+    }
+  };
+
+  const rankBadge = () => {
+    switch (user.rank) {
+      case "SCRUB":
+        return <span className="rounded-full bg-neutral-600 px-2">Scrub</span>;
+      case "NOOB":
+        return <span className="rounded-full bg-emerald-600 px-2">Noob</span>;
+      case "ROOKIE":
+        return <span className="rounded-full bg-blue-600 px-2">Rookie</span>;
+      case "CRACKED":
+        return <span className="rounded-full bg-purple-600 px-2">Cracked</span>;
+      case "GOATED":
+        return <span className="rounded-full bg-orange-400 px-2">Goated</span>;
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8 p-0 md:p-4">
@@ -55,8 +82,19 @@ const ProfilePage: NextPage<PageProps> = (props) => {
               className="rounded-full"
             />
           </div>
-          <div className="flex flex-col">
-            <h1 className="mb-0">{user.name}</h1>
+          <div className="">
+            <div className="flex items-center gap-4">
+              <h1 className="mb-0">{user.name}</h1>
+              {user.isVerified && (
+                <PopperButton
+                  showOn="hover"
+                  tooltip={user.name + " is verified."}
+                  button={<FaCheckCircle className="text-orange-500" />}
+                />
+              )}
+              {roleBadge()}
+              {rankBadge()}
+            </div>
             <div className="h-fit text-xs leading-tight">
               Member Since {new Date(user.createdAt).toDateString()}
             </div>
@@ -98,11 +136,12 @@ const ProfilePage: NextPage<PageProps> = (props) => {
           {isCurrentUser ? "Your Reviews" : `${user.name}'s Reviews`}
         </Heading>
         <div className="flex flex-col gap-4">
-          <ReviewGrid reviews={user.reviews} />
-          {user.reviews.length === 0 && (
+          {user.reviews.length === 0 ? (
             <Panel>
               <div className="text-center">No reviews yet!</div>
             </Panel>
+          ) : (
+            <ReviewGrid reviews={user.reviews} />
           )}
         </div>
       </section>

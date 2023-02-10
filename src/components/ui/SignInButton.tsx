@@ -23,16 +23,16 @@ const SignInButton = (props: Props) => {
 
   switch (platform) {
     case "discord":
-      bgColor = "bg-[#7289da]";
+      bgColor = "bg-[#7289da] hover:bg-[#8599de]";
       break;
     case "twitch":
-      bgColor = "bg-[#6441a5]";
+      bgColor = "bg-[#6441a5] hover:bg-[#8265ba]";
       break;
   }
 
   return (
     <button
-      className={`mb-2 flex items-center justify-center gap-2 border-0 ${bgColor}`}
+      className={`flex w-full items-center justify-center gap-2 rounded border-0 px-4 py-2 transition-all ${bgColor}`}
       onClick={() => signIn(platform)}
     >
       <PlatformLogo platform={platform} /> Login with{" "}

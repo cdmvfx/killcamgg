@@ -11,7 +11,7 @@ const Button = ({
   text,
   onClick,
   icon,
-  variant = "secondary",
+  variant = "primary",
   width = "fit",
   classNames,
 }: Props) => {

@@ -1,4 +1,18 @@
+export enum DateRange {
+	ThisWeek = "this_week",
+	ThisMonth = "this_month",
+	ThisYear = "this_year",
+	AllTime = "all_time",
+}
+
+export enum Sort {
+	Hot = "hot",
+	New = "new",
+	Top = "top",
+	Worst = "worst",
+}
+
 export type SortOption = {
-	name: "Newest" | "Oldest" | "Rating (Low to High)" | "Rating (High to Low)";
-	value: "newest" | "oldest" | "rating-asc" | "rating-desc";
+	name: keyof typeof Sort;
+	value: "hot" | "new" | "top" | "worst";
 };

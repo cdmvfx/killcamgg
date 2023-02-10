@@ -10,10 +10,12 @@ const LoadingScreen = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const handleStart = (url: string) =>
+    const handleStart = (url: string) => {
       url !== router.asPath && setLoading(true);
-    const handleComplete = (url: string) =>
+    };
+    const handleComplete = (url: string) => {
       url === router.asPath && setLoading(false);
+    };
 
     router.events.on("routeChangeStart", handleStart);
     router.events.on("routeChangeComplete", handleComplete);

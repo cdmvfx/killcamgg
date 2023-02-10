@@ -62,6 +62,7 @@ model User {
   builds        Build[]       @relation("User Builds")
   reviews       Review[]
   favorites     Build[]       @relation("User Favorites")
+  views         Build[]       @relation("User Views")
   socials       Social[]
   activityLogs  ActivityLog[]
   likedReviews  Review[]      @relation("Review Likes")
@@ -122,7 +123,11 @@ model Build {
   attachmentSetups AttachmentSetup[]
   reviews          Review[]
   favorites        User[]            @relation("User Favorites")
+  views            User[]            @relation("User Views")
   averageRating    Float             @default(0)
+  totalLikes       Int               @default(0)
+  totalDislikes    Int               @default(0)
+  totalRatings     Int               @default(0)
   totalReviews     Int               @default(0)
   status           BuildStatus       @default(PENDING)
   activityLogs     ActivityLog[]

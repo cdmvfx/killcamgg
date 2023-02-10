@@ -3,8 +3,8 @@ import SignInButton from "../../components/ui/SignInButton";
 
 const SigninPage = () => {
   return (
-    <div className="m-auto w-full p-8 md:w-fit md:p-0">
-      <Panel>
+    <div className="m-auto w-full max-w-md p-8 md:p-0">
+      <Panel className="flex flex-col gap-5">
         <SignInButton platform="discord" />
         <SignInButton platform="twitch" />
       </Panel>

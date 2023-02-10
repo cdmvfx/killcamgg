@@ -108,6 +108,7 @@ const BuildPage: NextPage<PageProps> = (props) => {
   const isLiked = existingReview ? existingReview.isLike : null;
 
   const changeFavorite = async () => {
+    if (!sessionUser || sessionUser.id === build.authorId) return;
     toggleFavoriteMutation({
       buildId: build.id,
       status: !isFavorited,
@@ -229,6 +230,8 @@ const BuildHeader = ({
   });
 
   const handleToggleLike = (status: boolean) => {
+    if (!sessionUser || sessionUser.id === build.authorId) return;
+
     if (
       (isLiked === true && status === true) ||
       (isLiked === false && status === false)
@@ -276,9 +279,7 @@ const BuildHeader = ({
               </div>
             </div>
             <div className="w-full">
-              <h1 className="mb-4">
-                {build.title} {build.title}
-              </h1>
+              <h1 className="mb-4">{build.title}</h1>
               <div className="flex w-full flex-wrap justify-between gap-4 md:gap-x-0">
                 <div className="flex flex-wrap items-center gap-4 md:gap-x-8 md:gap-y-4">
                   <div className="w-fit">
@@ -323,34 +324,38 @@ const BuildHeader = ({
                     <BuildModMenu status={build.status} buildId={build.id} />
                   )}
                 </div>
-                {(!sessionUser || build.authorId !== sessionUser.id) && (
-                  <div className="flex cursor-pointer items-center justify-end gap-8 text-3xl text-orange-400 md:gap-8">
-                    <div
-                      className="flex items-center gap-2 text-emerald-500"
-                      onClick={() => handleToggleLike(true)}
-                    >
-                      {isLiked === true ? <MdThumbUp /> : <MdThumbUpOffAlt />}{" "}
-                      {numLikes}
-                    </div>
-                    <div
-                      className="flex items-center gap-2 text-red-500"
-                      onClick={() => handleToggleLike(false)}
-                    >
-                      {isLiked === false ? (
-                        <MdThumbDown />
-                      ) : (
-                        <MdThumbDownOffAlt />
-                      )}{" "}
-                      {numDislikes}
-                    </div>
-                    <div
-                      className="cursor-pointer text-red-500"
-                      onClick={changeFavorite}
-                    >
-                      {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
-                    </div>
+                <div
+                  className={`flex items-center justify-end gap-8 text-3xl text-orange-400 md:gap-8 ${
+                    !sessionUser || sessionUser.id === build.authorId
+                      ? ""
+                      : "cursor-pointer"
+                  }`}
+                >
+                  <div
+                    className="flex items-center gap-2 text-emerald-500"
+                    onClick={() => handleToggleLike(true)}
+                  >
+                    {isLiked === true ? <MdThumbUp /> : <MdThumbUpOffAlt />}{" "}
+                    {numLikes}
                   </div>
-                )}
+                  <div
+                    className="flex items-center gap-2 text-red-500"
+                    onClick={() => handleToggleLike(false)}
+                  >
+                    {isLiked === false ? (
+                      <MdThumbDown />
+                    ) : (
+                      <MdThumbDownOffAlt />
+                    )}{" "}
+                    {numDislikes}
+                  </div>
+                  <div
+                    className="cursor-pointer text-red-500"
+                    onClick={changeFavorite}
+                  >
+                    {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -368,50 +373,6 @@ const BuildInfo = ({ build }: Omit<PageProps, "sessionUser">) => {
         <Panel className="basis-2/3 lg:p-8">
           <div className="build-info flex flex-col gap-4 md:flex-row">
             <div className="basis-full">
-              <p className="mb-4">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis
-                odio ante, finibus nec interdum nec, feugiat eu eros. Aenean sed
-                odio fringilla, hendrerit ante id, semper ante. Suspendisse
-                iaculis pellentesque massa, et laoreet ligula congue sit amet.
-                Donec sed ligula commodo, pulvinar nisi vitae, pulvinar turpis.
-                In vehicula ante ac ligula malesuada semper. Etiam at lobortis
-                sem. Vestibulum accumsan viverra fringilla. Quisque suscipit,
-                nibh non imperdiet faucibus, nibh dui consequat neque, a
-                hendrerit tellus tortor id augue. Ut placerat aliquam urna.
-              </p>
-              <p className="mb-4">
-                Proin in est rutrum, condimentum enim at, cursus quam. Nunc eu
-                augue augue. Phasellus ut sem et ex convallis hendrerit et
-                scelerisque leo. Ut quam nibh, placerat eu congue quis, viverra
-                vel turpis. Nulla eu hendrerit nisl. Mauris nec nisl fringilla,
-                accumsan lacus ac, cursus enim. Nunc nisl nisl, bibendum at
-                dolor eget, dapibus iaculis tellus. Nam fermentum erat vitae
-                mauris volutpat, eu lacinia odio euismod. Proin eget sagittis
-                purus. Vivamus auctor ipsum at neque commodo, a facilisis tellus
-                porttitor. Sed dui lorem, venenatis volutpat consequat in,
-                venenatis vel velit. Aenean porta rhoncus semper.{" "}
-              </p>
-              <p className="mb-4">
-                Duis posuere vel orci vitae tincidunt. Etiam placerat, nibh
-                bibendum imperdiet hendrerit, purus quam molestie orci, sit amet
-                tincidunt risus erat ac lorem. Quisque convallis est ante, non
-                vulputate quam venenatis eget. Lorem ipsum dolor sit amet,
-                consectetur adipiscing elit. Sed rutrum elit eu neque porta, eu
-                fringilla tellus lacinia. Mauris diam massa, porttitor sit amet
-                libero vel, egestas posuere ex. Aenean at rhoncus mauris, vitae
-                sodales enim. Sed finibus fermentum nisl. Aenean nunc sapien,
-                hendrerit nec libero et, vehicula feugiat metus. Aliquam erat
-                volutpat. Mauris tempor enim ut vulputate suscipit. Nulla id leo
-                venenatis, vehicula ante vel, volutpat odio. Phasellus vel
-                ornare urna. Curabitur ullamcorper nulla at orci gravida,
-                volutpat rutrum augue viverra.
-              </p>
-              <p>
-                Aliquam lacus elit, gravida et tellus at, scelerisque pharetra
-                tellus. Vestibulum id justo egestas augue pulvinar sollicitudin.
-                Donec mollis ullamcorper massa eget hendrerit. Proin porta id ex
-                ut rutrum.
-              </p>
               <p>{build.description || ""}</p>
             </div>
           </div>
@@ -450,14 +411,14 @@ const BuildReviews = (
             <Link href="/signin">
               <Button
                 text="Sign in to review this build!"
-                classNames="p-0 mb-0 border-0"
+                classNames="border-0 mb-4"
                 variant="primary"
               />
             </Link>
           )}
         </div>
         {sessionUser && build.authorId !== sessionUser.id && showReviewForm && (
-          <Panel>
+          <Panel className="mb-4">
             <ReviewForm
               build={build}
               setShowReviewForm={setShowReviewForm}

@@ -1,13 +1,30 @@
+import type { Build, Prisma } from "@prisma/client";
 import { z } from "zod";
+import { DateRange, Sort } from "../../../types/Filters";
+import hot from "../../../utils/ranking";
 import { router, publicProcedure, protectedProcedure, modOrAdminProcedure } from "../trpc";
 
 export const buildRouter = router({
-	getAll: publicProcedure.query(async ({ ctx }) => {
-		try {
-			return await ctx.prisma.build.findMany({
+	getAll: publicProcedure
+		.input(z.object({
+			limit: z.number(),
+			sort: z.string(),
+			dateRange: z.string(),
+			cursor: z.string().nullish(),
+			weaponId: z.number().nullable(),
+			attachmentIds: z.array(z.number()).nullable(),
+		}))
+		.query(async ({ input, ctx }) => {
+
+			const limit = input.limit;
+
+			const filters = {
+				take: limit + 1,
+				cursor: input.cursor ? { id: input.cursor } : undefined,
 				where: {
 					status: "APPROVED"
-				},
+				} as Prisma.BuildWhereInput,
+				orderBy: {} as Prisma.BuildOrderByWithRelationInput,
 				include: {
 					weapon: true,
 					attachmentSetups: {
@@ -23,13 +40,97 @@ export const buildRouter = router({
 						}
 					}
 				}
-			});
-		}
-		catch (error) {
-			console.warn('Error in getAll: ');
-			console.log(error);
-		}
-	}),
+			};
+
+			if (input.weaponId) {
+				filters.where.weaponId = input.weaponId;
+			}
+
+			if (input.attachmentIds && input.attachmentIds.length > 0) {
+				filters.where.attachmentSetups = {
+					some: {
+						attachmentId: {
+							in: input.attachmentIds
+						}
+					}
+				}
+			}
+
+			switch (input.dateRange) {
+				case DateRange.ThisWeek:
+					filters.where.updatedAt = {
+						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
+						lte: new Date()
+					}
+					break;
+				case DateRange.ThisMonth:
+					filters.where.updatedAt = {
+						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
+						lte: new Date()
+					}
+					break;
+				case DateRange.ThisYear:
+					filters.where.updatedAt = {
+						gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365),
+						lte: new Date()
+					}
+					break;
+			}
+
+			switch (input.sort) {
+				case Sort.Hot:
+					break;
+				case Sort.New:
+					filters.orderBy = {
+						createdAt: "desc"
+					}
+					break;
+				case Sort.Top:
+					filters.orderBy = {
+						totalLikes: "desc"
+					}
+					break;
+				case Sort.Worst:
+					filters.orderBy = {
+						totalDislikes: "desc"
+					}
+					break;
+			}
+
+			try {
+				let items = await ctx.prisma.build.findMany(filters);
+
+				if (input.sort === Sort.Hot) {
+
+					items = items.map((item) => {
+
+						const score = hot(item.totalLikes, item.totalDislikes, item.createdAt);
+
+						return {
+							item,
+							score
+						}
+
+					}).sort((a, b) => b.score - a.score).map((item) => item.item);
+
+				}
+
+				let nextCursor: typeof input.cursor | undefined = undefined;
+				if (items.length > limit) {
+					const nextItem = items.pop() as Build
+					nextCursor = nextItem.id;
+				}
+
+				return {
+					items,
+					nextCursor
+				}
+			}
+			catch (error) {
+				console.warn('Error in getAll: ');
+				console.log(error);
+			}
+		}),
 	getAllPending: modOrAdminProcedure
 		.query(async ({ ctx }) => {
 			try {

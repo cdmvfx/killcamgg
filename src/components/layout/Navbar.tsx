@@ -5,7 +5,8 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import PopperButton from "../ui/PopperButton";
-import { FaClock, FaFire, FaList, FaMedal } from "react-icons/fa";
+import { FaClock, FaFire, FaList, FaMedal, FaUpload } from "react-icons/fa";
+import { useRouter } from "next/router";
 
 const Navbar = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -14,7 +15,7 @@ const Navbar = () => {
 
   const { data: session } = useSession();
 
-  const navItems = [
+  let navItems = [
     {
       name: "Home",
       href: "/",
@@ -22,19 +23,26 @@ const Navbar = () => {
     {
       name: "Builds",
       href: "/builds",
+      tooltip: <BuildMenu />,
+      children: [
+        {
+          name: "Hot Builds",
+          href: "/builds/?view=hot",
+        },
+        {
+          name: "New Builds",
+          href: "/builds/?view=new",
+        },
+        {
+          name: "Top Builds",
+          href: "/builds/?view=top",
+        },
+        {
+          name: "Worst Builds",
+          href: "/builds/?view=worst",
+        },
+      ],
     },
-    {
-      name: "Submit A Build",
-      href: "/submit",
-    },
-    // {
-    //   name: "Users",
-    //   href: "/users",
-    // },
-    // {
-    //   name: "FAQ",
-    //   href: "/faq",
-    // },
   ];
 
   const modItems = [
@@ -44,9 +52,15 @@ const Navbar = () => {
     },
   ];
 
+  const router = useRouter();
+
   const isAuthorized: boolean = session?.user
     ? session?.user.role === "MODERATOR" || session?.user.role === "ADMIN"
     : false;
+
+  if (isAuthorized) {
+    navItems = navItems.concat(modItems);
+  }
 
   return (
     <nav>
@@ -69,11 +83,26 @@ const Navbar = () => {
             </Link>
           </div>
           <div className="hidden items-center gap-8 md:flex md:flex-1">
-            {navItems.map((item, index) => (
-              <PopperButton
-                key={`nav-desktop-item-${index}`}
-                showOn="hovermenu"
-                button={
+            {navItems.map((item, index) => {
+              if (item.tooltip) {
+                return (
+                  <PopperButton
+                    key={`nav-desktop-item-${index}`}
+                    showOn="hovermenu"
+                    button={
+                      <Link
+                        href={item.href}
+                        className="p-4 transition-all hover:text-orange-400"
+                        key={`nav-desktop-item-${index}`}
+                      >
+                        <div className="font-jost">{item.name}</div>
+                      </Link>
+                    }
+                    tooltip={item.tooltip}
+                  />
+                );
+              } else {
+                return (
                   <Link
                     href={item.href}
                     className="p-4 transition-all hover:text-orange-400"
@@ -81,20 +110,9 @@ const Navbar = () => {
                   >
                     <div className="font-jost">{item.name}</div>
                   </Link>
-                }
-                tooltip={<NavPopover item={item} />}
-              />
-            ))}
-            {isAuthorized &&
-              modItems.map((item, index) => (
-                <Link
-                  href={item.href}
-                  className="transition-all hover:text-orange-400"
-                  key={`nav-mod-desktop-item-${index}`}
-                >
-                  <div className="font-jost">{item.name}</div>
-                </Link>
-              ))}
+                );
+              }
+            })}
           </div>
           <div className="flex items-center justify-end text-2xl">
             {session?.user ? (
@@ -111,12 +129,6 @@ const Navbar = () => {
                 </div>
               </Link>
             )}
-            <div
-              onClick={() => alert("coming soon bitch")}
-              className="cursor-pointer pr-4 transition-all hover:text-orange-600"
-            >
-              <IoMdSearch />
-            </div>
           </div>
         </div>
       </div>
@@ -132,23 +144,17 @@ const Navbar = () => {
             key={`nav-item-${index}`}
             onClick={() => setIsDrawerOpen(false)}
           >
-            <div className="rounded-md p-4 font-jost transition-all hover:bg-neutral-900 hover:text-orange-600">
+            <div
+              className={`mb-4 rounded-md p-4 font-jost transition-all hover:bg-neutral-900 hover:text-orange-500 ${
+                item.href == router.pathname
+                  ? "bg-neutral-900 text-orange-500"
+                  : ""
+              }`}
+            >
               {item.name}
             </div>
           </Link>
         ))}
-        {isAuthorized &&
-          modItems.map((item, index) => (
-            <Link
-              href={item.href}
-              key={`nav-mod-item-${index}`}
-              onClick={() => setIsDrawerOpen(false)}
-            >
-              <div className="rounded-md p-4 font-jost transition-all hover:bg-neutral-900 hover:text-orange-600">
-                {item.name}
-              </div>
-            </Link>
-          ))}
       </Drawer>
       {session && session.user ? (
         <Drawer
@@ -179,68 +185,63 @@ const Navbar = () => {
   );
 };
 
-type NavPopoverProps = {
-  item: {
-    name: string;
-    href: string;
-  };
-};
-
-const NavPopover = (props: NavPopoverProps) => {
-  const { item } = props;
-
-  switch (item.name) {
-    case "Builds":
-      return (
-        <div>
-          <div className="text-xl">Builds Menu</div>
-          <div className="mb-4">
-            Browse through our communities collection of builds, ready for you
-            to dominate the warzone.
+const BuildMenu = () => {
+  return (
+    <div className="max-w-md">
+      <div className="mb-2 text-xl">Builds</div>
+      <div className="mb-4">
+        Browse through our communities collection of builds, ready for you to
+        dominate the warzone.
+      </div>
+      <div className="grid grid-cols-2 grid-rows-3 gap-4">
+        <Link
+          href={`/builds/?view=hot`}
+          className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
+        >
+          <div>
+            <FaFire />
           </div>
-          <div className="grid grid-cols-2 grid-rows-2 gap-4">
-            <Link
-              href={`/builds/hot`}
-              className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
-            >
-              <div>
-                <FaFire />
-              </div>
-              <div>Hot Builds</div>
-            </Link>
-            <Link
-              href={`/builds/top`}
-              className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
-            >
-              <div>
-                <FaMedal />
-              </div>
-              <div>Top Builds</div>
-            </Link>
-            <Link
-              href={`/builds/new`}
-              className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
-            >
-              <div>
-                <FaClock />
-              </div>
-              <div>New Builds</div>
-            </Link>
-            <Link
-              href={`/builds/all`}
-              className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
-            >
-              <div>
-                <FaList />
-              </div>
-              <div>All Builds</div>
-            </Link>
+          <div>Hot Builds</div>
+        </Link>
+        <Link
+          href={`/builds/?view=top`}
+          className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
+        >
+          <div>
+            <FaMedal />
           </div>
-        </div>
-      );
-    default:
-      return <></>;
-  }
+          <div>Top Builds</div>
+        </Link>
+        <Link
+          href={`/builds/?view=new`}
+          className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
+        >
+          <div>
+            <FaClock />
+          </div>
+          <div>New Builds</div>
+        </Link>
+        <Link
+          href={`/builds/?view=worst`}
+          className="flex cursor-pointer items-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
+        >
+          <div>
+            <FaList />
+          </div>
+          <div>Worst Builds</div>
+        </Link>
+        <Link
+          href={`/builds/submit`}
+          className="col-span-2 flex cursor-pointer items-center justify-center gap-4 rounded border border-orange-500 p-4 transition-all hover:text-orange-500"
+        >
+          <div>
+            <FaUpload />
+          </div>
+          <div>Submit A Build</div>
+        </Link>
+      </div>
+    </div>
+  );
 };
 
 export default Navbar;
