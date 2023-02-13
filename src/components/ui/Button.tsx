@@ -21,7 +21,7 @@ const Button = ({
     secondary:
       "border px-4 py-2 border-orange-600 bg-transparent hover:text-orange-500",
     tertiary:
-      "border px-4 py-2 border-transparent bg-transparent hover:text-orange-600",
+      "border px-4 py-2 border-transparent bg-transparent hover:text-orange-500",
     plain: "",
   };
 

@@ -36,6 +36,7 @@ export const buildRouter = router({
 						select: {
 							id: true,
 							name: true,
+							displayName: true,
 							image: true
 						}
 					}
@@ -149,6 +150,7 @@ export const buildRouter = router({
 							select: {
 								id: true,
 								name: true,
+								displayName: true,
 								image: true,
 							},
 						},
@@ -177,6 +179,7 @@ export const buildRouter = router({
 							select: {
 								id: true,
 								name: true,
+								displayName: true,
 								image: true,
 							},
 						},
@@ -208,6 +211,7 @@ export const buildRouter = router({
 							select: {
 								id: true,
 								name: true,
+								displayName: true,
 								image: true,
 							},
 						},
@@ -231,6 +235,7 @@ export const buildRouter = router({
 											select: {
 												id: true,
 												name: true,
+												displayName: true,
 												image: true,
 											},
 										},
@@ -238,6 +243,7 @@ export const buildRouter = router({
 											select: {
 												author: {
 													select: {
+														displayName: true,
 														name: true
 													}
 												}
@@ -257,6 +263,7 @@ export const buildRouter = router({
 									select: {
 										id: true,
 										name: true,
+										displayName: true,
 										image: true,
 									},
 								},

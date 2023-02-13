@@ -2,10 +2,10 @@ import Link from "next/link";
 import { IoMdHeart, IoMdStar } from "react-icons/io";
 import Spinner from "../../ui/Spinner";
 import Panel from "../../ui/Panel";
-import type { BuildWithReviewsAndAuthor } from "../../../types/Builds";
+import type { BuildFromBuildGetAllResult } from "../../../types/Builds";
 
 type BuildCardProps = {
-  build: BuildWithReviewsAndAuthor;
+  build: BuildFromBuildGetAllResult;
   userFavorites?: string[] | null;
 };
 
@@ -22,8 +22,8 @@ export const BuildCard = (props: BuildCardProps) => {
       className="rounded-md border border-transparent transition-all hover:border-orange-600 hover:shadow-lg md:basis-1/2"
     >
       <Panel>
-        <div className="flex gap-4">
-          <div className="flex basis-4/12 flex-col items-center justify-center gap-2">
+        <div className="grid grid-cols-[8rem,auto]">
+          <div className="flex flex-col items-center justify-center gap-2">
             <div className="flex text-4xl">
               <span className="text-orange-500">
                 <IoMdStar />
@@ -35,17 +35,20 @@ export const BuildCard = (props: BuildCardProps) => {
               {build.totalReviews === 1 ? "Review" : "Reviews"}
             </div>
           </div>
-          <div className="basis-8/12">
+          <div className="truncate">
             <div className="p-2">
-              <div className="text-lg">
-                <p>
+              <div className=" text-lg">
+                <p className="w-full truncate">
                   {build.title.length > 20
                     ? build.title.substring(0, 20) + "..."
                     : build.title}
                 </p>
               </div>
               <div className="text-xs">
-                by <span className="text-orange-500">{build.author.name}</span>{" "}
+                by{" "}
+                <span className="text-orange-500">
+                  {build.author.displayName}
+                </span>{" "}
                 -{" "}
                 {build.updatedAt === build.createdAt
                   ? new Date(build.createdAt).toLocaleDateString()
@@ -59,7 +62,13 @@ export const BuildCard = (props: BuildCardProps) => {
                   {build.attachmentSetups.map((attachmentSetup, index) => {
                     return (
                       <div key={index} className="text-sm">
-                        <div className="h-4 w-4 bg-orange-500"></div>
+                        <div
+                          className="h-4 w-4 bg-orange-500"
+                          style={{
+                            clipPath:
+                              "polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%)",
+                          }}
+                        ></div>
                       </div>
                     );
                   })}

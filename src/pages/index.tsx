@@ -49,8 +49,7 @@ const Home: NextPage = () => {
                 Builds For Guaranteed Dubs.
               </div>
               <div className="mb-4">
-                Build, share, and review builds and loadouts with our
-                community-first system.
+                Build, share, and review builds with our community-first system.
               </div>
               <div className="flex flex-col md:flex-row md:gap-8">
                 <Link href="/builds">
@@ -62,7 +61,7 @@ const Home: NextPage = () => {
                   />
                 </Link>
                 {status !== "loading" && session && (
-                  <Link href="/submit" className=" w-full md:w-auto">
+                  <Link href="/builds/submit" className=" w-full md:w-auto">
                     <Button
                       text="Submit A Build"
                       variant="secondary"
@@ -72,7 +71,7 @@ const Home: NextPage = () => {
                   </Link>
                 )}
                 {status !== "loading" && !session && (
-                  <Link href="/signin">
+                  <Link href="/auth/signin">
                     <Button
                       text="Sign In"
                       variant="secondary"

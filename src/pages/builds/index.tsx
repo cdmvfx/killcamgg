@@ -6,7 +6,7 @@ import Spinner from "../../components/ui/Spinner";
 import { DateRange, Sort } from "../../types/Filters";
 import { useSession } from "next-auth/react";
 import BuildFilters from "../../components/features/build/BuildFilters";
-import type { BuildWithReviewsAndAuthor } from "../../types/Builds";
+import type { BuildFromBuildGetAllResult } from "../../types/Builds";
 import Button from "../../components/ui/Button";
 import { queryTypes, useQueryState } from "next-usequerystate";
 
@@ -125,7 +125,7 @@ const BuildsPage = () => {
               <Spinner />
             ) : (
               <BuildGrid
-                builds={builds as BuildWithReviewsAndAuthor[]}
+                builds={builds as BuildFromBuildGetAllResult[]}
                 userFavorites={userFavorites}
               />
             )}
