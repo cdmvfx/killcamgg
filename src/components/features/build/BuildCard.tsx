@@ -37,13 +37,7 @@ export const BuildCard = (props: BuildCardProps) => {
           </div>
           <div className="truncate">
             <div className="p-2">
-              <div className=" text-lg">
-                <p className="w-full truncate">
-                  {build.title.length > 20
-                    ? build.title.substring(0, 20) + "..."
-                    : build.title}
-                </p>
-              </div>
+              <div className=" w-full truncate text-lg">{build.title}</div>
               <div className="text-xs">
                 by{" "}
                 <span className="text-orange-500">
