@@ -25,6 +25,11 @@ const config = {
         hostname: "static-cdn.jtvnw.net",
         pathname: "/jtv_user_pictures/**",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
     ],
   },
   experimental: {

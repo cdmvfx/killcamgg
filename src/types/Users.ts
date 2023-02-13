@@ -8,3 +8,12 @@ export type UserGetProfileDataResult = RouterOutput['user']['getProfileData'];
 export type ReviewFromUserGetProfileDataResult = NonNullable<UserGetProfileDataResult>['reviews'][number];
 
 export type ReviewBuildFromUserGetProfileDataResult = ReviewFromUserGetProfileDataResult['build'];
+
+export enum SocialPlatforms {
+	Twitter = "TWITTER",
+	YouTube = "YOUTUBE",
+	Tiktok = "TIKTOK",
+	Instagram = "INSTAGRAM",
+	Discord = "DISCORD",
+	Twitch = "TWITCH"
+}

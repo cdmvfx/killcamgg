@@ -3,7 +3,7 @@ const Panel = ({
   children,
 }: {
   className?: string;
-  children: JSX.Element | JSX.Element[];
+  children: React.ReactNode;
 }) => {
   return (
     <div

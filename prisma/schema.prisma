@@ -50,20 +50,21 @@ model Session {
 model User {
   id            String        @id @default(cuid())
   createdAt     DateTime      @default(now())
-  name          String?       @unique
-  email         String?       @unique
+  name          String        @unique
+  displayName   String        @default("Anonymous")
+  email         String        @unique
   emailVerified DateTime?
-  image         String?
+  image         String
   isVerified    Boolean       @default(false)
-  role          Role?         @default(USER)
-  rank          Rank          @default(SCRUB)
+  role          Role          @default(USER)
+  score         Int           @default(0)
   accounts      Account[]
   sessions      Session[]
   builds        Build[]       @relation("User Builds")
   reviews       Review[]
   favorites     Build[]       @relation("User Favorites")
   views         Build[]       @relation("User Views")
-  socials       Social[]
+  socials       Socials?
   activityLogs  ActivityLog[]
   likedReviews  Review[]      @relation("Review Likes")
   replies       Reply[]
@@ -77,14 +78,6 @@ enum Role {
   CREATOR
 }
 
-enum Rank {
-  SCRUB
-  NOOB
-  ROOKIE
-  CRACKED
-  GOATED
-}
-
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -93,21 +86,16 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Social {
-  id       String          @id @default(cuid())
-  userId   String
-  user     User            @relation(fields: [userId], references: [id])
-  platform SocialPlatforms
-  username String
-}
-
-enum SocialPlatforms {
-  TWITCH
-  YOUTUBE
-  TWITTER
-  INSTAGRAM
-  TIKTOK
-  DISCORD
+model Socials {
+  id        String @id @default(cuid())
+  userId    String @unique
+  user      User   @relation(fields: [userId], references: [id])
+  twitch    String @default("")
+  youtube   String @default("")
+  twitter   String @default("")
+  instagram String @default("")
+  tiktok    String @default("")
+  discord   String @default("")
 }
 
 model Build {

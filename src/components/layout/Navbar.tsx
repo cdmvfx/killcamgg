@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IoMdMenu, IoMdPerson, IoMdSearch } from "react-icons/io";
+import { IoMdMenu } from "react-icons/io";
 import Drawer from "../ui/Drawer";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
@@ -7,6 +7,8 @@ import Image from "next/image";
 import PopperButton from "../ui/PopperButton";
 import { FaClock, FaFire, FaList, FaMedal, FaUpload } from "react-icons/fa";
 import { useRouter } from "next/router";
+import Button from "../ui/Button";
+import { signOut } from "next-auth/react";
 
 const Navbar = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -43,12 +45,39 @@ const Navbar = () => {
         },
       ],
     },
+    {
+      name: "FAQ",
+      href: "/faq",
+    },
   ];
 
   const modItems = [
     {
       name: "Mod Dashboard",
       href: "/mod",
+    },
+  ];
+
+  const accountItems = [
+    {
+      name: "My Profile",
+      href: `/${session?.user?.name}`,
+    },
+    {
+      name: "My Builds",
+      href: `/${session?.user?.name}/builds`,
+    },
+    {
+      name: "My Favorites",
+      href: `/${session?.user?.name}/favorites`,
+    },
+    {
+      name: "My Reviews",
+      href: `/${session?.user?.name}/reviews`,
+    },
+    {
+      name: "Settings",
+      href: `/settings`,
     },
   ];
 
@@ -63,8 +92,8 @@ const Navbar = () => {
   }
 
   return (
-    <nav>
-      <div className="w-full bg-neutral-900">
+    <nav className="w-full max-w-none bg-neutral-900">
+      <div className="w-full bg-neutral-900 md:mx-auto md:max-w-6xl">
         <div className="flex w-full items-center">
           <div className="flex h-full flex-1 items-center p-4 md:flex-none">
             <div
@@ -114,19 +143,23 @@ const Navbar = () => {
               }
             })}
           </div>
-          <div className="flex items-center justify-end text-2xl">
+          <div className="flex items-center justify-end">
             {session?.user ? (
               <div
                 onClick={() => setIsAccountDrawerOpen(true)}
-                className="cursor-pointer p-4 transition-all hover:text-orange-600"
+                className="cursor-pointer p-4"
               >
-                <IoMdPerson />
+                <Image
+                  src={session?.user.image as string}
+                  alt=""
+                  className="rounded-full"
+                  width={30}
+                  height={30}
+                />
               </div>
             ) : (
-              <Link href={`/signin`}>
-                <div className="cursor-pointer p-4 transition-all hover:text-orange-600">
-                  <IoMdPerson />
-                </div>
+              <Link href={`/auth/signin`} className="px-4">
+                <Button text="Sign In" />
               </Link>
             )}
           </div>
@@ -156,30 +189,51 @@ const Navbar = () => {
           </Link>
         ))}
       </Drawer>
-      {session && session.user ? (
+      {session && session.user && (
         <Drawer
           open={isAccountDrawerOpen}
           setOpen={setIsAccountDrawerOpen}
           title="Account"
         >
-          <div className="flex items-center gap-4">
-            <div>
-              <Image
-                className="rounded-full"
-                src={session.user.image as string}
-                width={50}
-                height={50}
-                alt="Profile Image"
-              />
-            </div>
-            <div>
-              <label>Signed in as</label>
-              <div className="text-xl">{session.user.name}</div>
-            </div>
+          <div className="mb-8 flex items-center justify-between gap-4">
+            <Link
+              href={`/${session.user.name}`}
+              className="flex items-center gap-4"
+            >
+              <div>
+                <Image
+                  className="rounded-full"
+                  src={session.user.image as string}
+                  width={50}
+                  height={50}
+                  alt="Profile Image"
+                />
+              </div>
+              <div className="flex-grow">
+                <label>Signed in as</label>
+                <div className="text-xl">{session.user.name}</div>
+              </div>
+            </Link>
+            <Button text="Sign Out" variant="tertiary" onClick={signOut} />
           </div>
+          {accountItems.map((item, index) => (
+            <Link
+              key={`account-item-${index}`}
+              href={item.href}
+              onClick={() => setIsDrawerOpen(false)}
+            >
+              <div
+                className={`mb-2 rounded-md px-4 py-2 font-jost transition-all hover:bg-neutral-900 hover:text-orange-500 ${
+                  `/${item.href}` == router.pathname
+                    ? "bg-neutral-900 text-orange-500"
+                    : ""
+                }`}
+              >
+                {item.name}
+              </div>
+            </Link>
+          ))}
         </Drawer>
-      ) : (
-        <></>
       )}
     </nav>
   );

@@ -1,9 +1,9 @@
 import Panel from "../../ui/Panel";
-import type { BuildWithReviewsAndAuthor } from "../../../types/Builds";
+import type { BuildFromBuildGetAllResult } from "../../../types/Builds";
 import { BuildCard } from "./BuildCard";
 
 type BuildGridProps = {
-  builds: BuildWithReviewsAndAuthor[];
+  builds: BuildFromBuildGetAllResult[];
   userFavorites: string[] | null;
   emptyMessage?: string;
 };

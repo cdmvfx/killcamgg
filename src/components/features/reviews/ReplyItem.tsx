@@ -65,7 +65,7 @@ const ReplyItem = ({
             href={`/${reply.author.name}`}
             className="font-bold text-neutral-400 transition-all hover:text-orange-500"
           >
-            {reply.author.name}
+            {reply.author.displayName}
           </Link>
           {reply.reply && (
             <div className="mb-1 text-xs">
@@ -74,7 +74,7 @@ const ReplyItem = ({
                 className="text-neutral-400 transition-all hover:text-orange-500"
                 href={`/${reply.reply.author.name as string}`}
               >
-                {reply.reply.author.name}
+                {reply.reply.author.displayName}
               </Link>
             </div>
           )}
@@ -113,7 +113,7 @@ const ReplyItem = ({
       {isReplyFormOpen && (
         <ReplyForm
           setIsReplyFormOpen={setIsReplyFormOpen}
-          authorName={reply.author.name as string}
+          authorName={reply.author.displayName}
           reviewId={reviewId}
           replyId={reply.id}
           buildId={buildId}

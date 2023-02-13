@@ -161,7 +161,7 @@ export const ReviewItem = (props: ReviewItemProps) => {
             href={`/${review.author.name}`}
             className="font-bold text-neutral-400"
           >
-            {review.author.name}
+            {review.author.displayName}
           </Link>
           <div className="mb-2">{review.content}</div>
           <div className="mb-4 flex items-center gap-4 text-xs">
@@ -201,7 +201,7 @@ export const ReviewItem = (props: ReviewItemProps) => {
           {isReplyFormOpen && (
             <ReplyForm
               setIsReplyFormOpen={setIsReplyFormOpen}
-              authorName={review.author.name as string}
+              authorName={review.author.displayName}
               reviewId={review.id}
               buildId={buildId}
             />

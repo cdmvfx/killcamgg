@@ -6,6 +6,7 @@ import { weaponRouter } from './weapon';
 import { userRouter } from './user';
 import { reviewRouter } from './review';
 import { replyRouter } from './reply';
+import { settingsRouter } from './settings';
 
 export const appRouter = router({
 	build: buildRouter,
@@ -14,7 +15,8 @@ export const appRouter = router({
 	attachment: attachmentRouter,
 	user: userRouter,
 	review: reviewRouter,
-	reply: replyRouter
+	reply: replyRouter,
+	settings: settingsRouter
 });
 
 // export type definition of API

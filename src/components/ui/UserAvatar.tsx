@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 type UserAvatarProps = {
-  user: Pick<User, "id" | "name" | "image">;
+  user: Pick<User, "id" | "name" | "displayName" | "image">;
   date?: Date;
   showAvatar?: boolean;
   showName?: boolean;
@@ -34,7 +34,7 @@ const UserAvatar = ({
       {showName && (
         <div className="">
           <div>
-            <div>{user.name}</div>
+            <div>{user.displayName}</div>
             {date && <div className="text-xs">{date.toLocaleDateString()}</div>}
           </div>
         </div>
