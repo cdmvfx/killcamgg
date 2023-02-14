@@ -20,6 +20,8 @@ import { Listbox, Transition } from "@headlessui/react";
 import { IoMdClose } from "react-icons/io";
 import { FaArrowsAltH, FaArrowsAltV } from "react-icons/fa";
 import Button from "../../ui/Button";
+import { buildFormSchema } from "../../../lib/formSchemas";
+import { TRPCClientError } from "@trpc/client";
 
 type FormErrors = {
   [key: string]: string[];
@@ -46,7 +48,7 @@ const BuildForm = (props: BuildFormProps) => {
     trpc.attachment.getAllByCategory.useQuery();
 
   const postBuild = trpc.build.post.useMutation({
-    onSettled: () => {
+    onSuccess: () => {
       utils.build.getAll.invalidate();
       setTitle("");
       setDescription("");
@@ -60,6 +62,20 @@ const BuildForm = (props: BuildFormProps) => {
       ]);
       setNumOfAttachments(1);
       setSuccess(true);
+    },
+    onError: (error) => {
+      if (error instanceof TRPCClientError) {
+        setErrors((prev) => ({
+          ...prev,
+          form: [error.message],
+        }));
+        return;
+      }
+      setErrors((prev) => ({
+        ...prev,
+        form: ["There was an error submitting your build."],
+      }));
+      return;
     },
   });
 
@@ -112,6 +128,7 @@ const BuildForm = (props: BuildFormProps) => {
     description: [],
     weaponId: [],
     attachmentSetups: [],
+    form: [],
   });
 
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
@@ -132,7 +149,6 @@ const BuildForm = (props: BuildFormProps) => {
   };
 
   const removeAttachment = (index: number) => {
-    console.log("Removing", index, selectedAttachments[index]);
     setSelectedAttachments((current) => current.filter((_, i) => i !== index));
     setNumOfAttachments((current) => current - 1);
   };
@@ -205,46 +221,8 @@ const BuildForm = (props: BuildFormProps) => {
       })),
     };
 
-    console.log(formData);
-
-    const formSchema = z.object({
-      title: z
-        .string({
-          required_error: "Title is required.",
-        })
-        .min(5, {
-          message: "Title must be at least 5 characters.",
-        })
-        .max(50, {
-          message: "Title must be less than 50 characters.",
-        }),
-      description: z.string().min(50, {
-        message: "Description must be at least 50 characters.",
-      }),
-      weaponId: z.number({
-        required_error: "You must select a weapon.",
-      }),
-      attachmentSetups: z
-        .array(
-          z.object({
-            attachmentId: z.number({
-              required_error: "You must select an attachment.",
-            }),
-            horizontal: z.string(),
-            vertical: z.string(),
-          })
-        )
-        .min(1, {
-          message: "You must select at least one attachment.",
-        })
-        .max(5, {
-          message: "You can only select up to 5 attachments.",
-        }),
-    });
-
     try {
-      const formDataFinal = formSchema.parse(formData);
-      console.log("Final form data", formDataFinal);
+      const formDataFinal = buildFormSchema.parse(formData);
 
       if (existingBuild) {
         const updateData = {
@@ -258,7 +236,6 @@ const BuildForm = (props: BuildFormProps) => {
       postBuild.mutate(formDataFinal);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.log(error.flatten());
         setErrors(error.flatten().fieldErrors as FormErrors);
       }
       return;
@@ -595,6 +572,15 @@ const BuildForm = (props: BuildFormProps) => {
             <Spinner />
           ) : !showDeleteAlert ? (
             <>
+              {errors.form &&
+                errors.form.map((error, index) => (
+                  <Alert
+                    key={`form-error-${index}`}
+                    status="error"
+                    className="mb-4"
+                    message={error}
+                  />
+                ))}
               <Button
                 text={existingBuild ? "Save Build" : "Submit Build"}
                 onClick={submitBuild}
@@ -604,10 +590,14 @@ const BuildForm = (props: BuildFormProps) => {
                 <>
                   <Button
                     variant="secondary"
+                    width="full"
+                    classNames="mt-2"
                     onClick={clickDeleteBuild}
                     text="Delete Build"
                   />
                   <Button
+                    width="full"
+                    classNames="mt-2"
                     text="Cancel"
                     variant="tertiary"
                     onClick={cancelBuildEdit}

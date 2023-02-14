@@ -4,6 +4,8 @@ import { trpc } from "../../../utils/trpc";
 import { z } from "zod";
 import Toast from "../../ui/Toast";
 import Button from "../../ui/Button";
+import { TRPCClientError } from "@trpc/client";
+import { replyFormSchema } from "../../../lib/formSchemas";
 
 type ReplyFormProps = {
   authorName: string;
@@ -18,7 +20,12 @@ const ReplyForm = (props: ReplyFormProps) => {
 
   const [content, setContent] = useState("");
 
-  const [showError, setShowError] = useState(false);
+  const [toast, setToast] = useState({
+    isVisible: false,
+    setIsVisible: (isVisible: boolean) => setToast({ ...toast, isVisible }),
+    message: "",
+    status: "error",
+  });
 
   const utils = trpc.useContext();
 
@@ -28,23 +35,29 @@ const ReplyForm = (props: ReplyFormProps) => {
       setContent("");
       setIsReplyFormOpen(false);
     },
+    onError: (error) => {
+      if (error instanceof TRPCClientError) {
+        setToast((prev) => ({
+          ...prev,
+          isVisible: true,
+          message: error.message,
+        }));
+      }
+    },
   });
 
   const sendReply = () => {
-    const replySchema = z.object({
-      content: z
-        .string()
-        .min(10, {
-          message: "Reply must be more than 10 characters.",
-        })
-        .max(100, { message: "Reply must be less than 100 characters." }),
-    });
-
     try {
-      replySchema.parse({ content });
+      replyFormSchema.parse({ content });
       mutate({ content, reviewId, replyId });
-    } catch (e) {
-      setShowError(true);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setToast((prev) => ({
+          ...prev,
+          isVisible: true,
+          message: (error as z.ZodError).message,
+        }));
+      }
     }
   };
 
@@ -54,11 +67,11 @@ const ReplyForm = (props: ReplyFormProps) => {
   };
 
   return (
-    <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
+    <div className="mb-4 flex w-full flex-col gap-2 md:flex-row md:items-center md:gap-4">
       <Toast
-        isVisible={showError}
-        setIsVisible={setShowError}
-        message="Reply must be less than 100 characters."
+        isVisible={toast.isVisible}
+        setIsVisible={toast.setIsVisible}
+        message={toast.message}
         status="error"
       />
       <label>Reply to {authorName}</label>
@@ -73,12 +86,14 @@ const ReplyForm = (props: ReplyFormProps) => {
           text="Send"
           classNames="p-0 mb-0 border-0"
           variant="primary"
+          width="full"
           onClick={sendReply}
         />
         <Button
           text="Cancel"
           classNames="p-0 mb-0 hover:text-orange-500"
-          variant="plain"
+          variant="tertiary"
+          width="full"
           onClick={closeReplyForm}
         />
       </div>
