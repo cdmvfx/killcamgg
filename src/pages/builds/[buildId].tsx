@@ -409,9 +409,9 @@ const BuildReviews = (
       <div className="flex flex-col">
         <div className="flex flex-col md:flex-row md:justify-between">
           <Heading>
-            {validReviews.length > 1
-              ? validReviews.length + " Reviews"
-              : "1 Review"}
+            {validReviews.length === 1
+              ? "1 Review"
+              : validReviews.length + " Reviews"}
           </Heading>
           {!sessionUser && (
             <Link href="/signin">
