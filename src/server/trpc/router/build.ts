@@ -27,18 +27,19 @@ export const buildRouter = router({
 				} as Prisma.BuildWhereInput,
 				orderBy: {} as Prisma.BuildOrderByWithRelationInput,
 				include: {
-					weapon: true,
+					weapon: {
+						select: {
+							name: true
+						}
+					},
 					attachmentSetups: {
-						include: {
-							attachment: true
+						select: {
+							id: true
 						}
 					},
 					author: {
 						select: {
-							id: true,
-							name: true,
 							displayName: true,
-							image: true
 						}
 					}
 				}
