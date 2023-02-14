@@ -182,6 +182,7 @@ export const userRouter = router({
 							select: {
 								id: true,
 								name: true,
+								displayName: true,
 								image: true,
 							},
 						},
@@ -237,6 +238,7 @@ export const userRouter = router({
 							select: {
 								id: true,
 								name: true,
+								displayName: true,
 								image: true,
 							},
 						},

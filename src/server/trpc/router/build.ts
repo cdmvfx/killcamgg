@@ -1,4 +1,5 @@
 import type { Build, Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { DateRange, Sort } from "../../../types/Filters";
 import hot from "../../../utils/ranking";
@@ -293,6 +294,32 @@ export const buildRouter = router({
 		.mutation(async ({ ctx, input }) => {
 
 			try {
+				const pendingBuilds = await ctx.prisma.build.findMany({
+					where: {
+						authorId: ctx.session.user.id,
+						status: "PENDING"
+					},
+					select: {
+						id: true
+					}
+				})
+
+				if (pendingBuilds.length > 2) {
+					throw new Error('You currently have three builds pending approval. Please wait for them to be approved before submitting another build.');
+				}
+			}
+			catch (error) {
+				if (error instanceof Error) {
+					throw new TRPCError({
+						code: "TOO_MANY_REQUESTS",
+						message: error.message,
+						cause: error
+					})
+				}
+				return;
+			}
+
+			try {
 				await ctx.prisma.build.create({
 					data: {
 						authorId: ctx.session.user.id,
@@ -456,6 +483,14 @@ export const buildRouter = router({
 				console.warn('Error in build.removeFavorite: ');
 				console.log(error);
 			}
+		}),
+	getUserPendingBuilds: protectedProcedure
+		.query(async ({ ctx }) => {
+			return ctx.prisma.build.findMany({
+				where: {
+					authorId: ctx.session.user.id,
+					status: "PENDING"
+				}
+			})
 		})
-
 });

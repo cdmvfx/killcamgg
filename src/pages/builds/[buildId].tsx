@@ -108,7 +108,7 @@ const BuildPage: NextPage<PageProps> = (props) => {
   const isLiked = existingReview ? existingReview.isLike : null;
 
   const changeFavorite = async () => {
-    if (!sessionUser || sessionUser.id === build.authorId) return;
+    if (!sessionUser) return;
     toggleFavoriteMutation({
       buildId: build.id,
       status: !isFavorited,
@@ -350,7 +350,9 @@ const BuildHeader = ({
                     {numDislikes}
                   </div>
                   <div
-                    className="cursor-pointer text-red-500"
+                    className={`${
+                      sessionUser ? "cursor-pointer" : ""
+                    } text-red-500`}
                     onClick={changeFavorite}
                   >
                     {isFavorited ? <IoMdHeart /> : <IoMdHeartEmpty />}
@@ -406,7 +408,11 @@ const BuildReviews = (
     <section className="p-4 md:p-0">
       <div className="flex flex-col">
         <div className="flex flex-col md:flex-row md:justify-between">
-          <Heading>Reviews</Heading>
+          <Heading>
+            {validReviews.length > 1
+              ? validReviews.length + " Reviews"
+              : "1 Review"}
+          </Heading>
           {!sessionUser && (
             <Link href="/signin">
               <Button

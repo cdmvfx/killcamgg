@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 
@@ -11,6 +12,34 @@ export const replyRouter = router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+
+			try {
+				// Get user's replies from past 10 minutes
+				const replies = await ctx.prisma.reply.findMany({
+					where: {
+						authorId: ctx.session.user.id,
+						createdAt: {
+							gte: new Date(new Date().getTime() - 10 * 60 * 1000)
+						}
+					}
+				})
+
+				// If user has already posted a reply in the past 10 minutes, throw an error
+				if (replies.length > 5) {
+					throw new Error("You have posted too many replies in the past 10 minutes. Please wait a few minutes before posting again.")
+				}
+			}
+			catch (error) {
+				if (error instanceof Error) {
+					throw new TRPCError({
+						code: "TOO_MANY_REQUESTS",
+						message: error.message,
+						cause: error
+					})
+				}
+				return;
+			}
+
 			try {
 				await ctx.prisma.reply.create({
 					data: {

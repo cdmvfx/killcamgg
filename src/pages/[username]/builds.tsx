@@ -2,7 +2,6 @@ import { BuildGrid } from "../../components/features/build";
 import { trpc } from "../../utils/trpc";
 import Spinner from "../../components/ui/Spinner";
 import type { BuildFromBuildGetAllResult } from "../../types/Builds";
-import React from "react";
 import Heading from "../../components/ui/Heading";
 import type {
   InferGetServerSidePropsType,
@@ -38,6 +37,7 @@ const UserBuildsPage: NextPage<PageProps> = (props) => {
 
   const builds = data?.pages.map((page) => page?.items).flat() || [];
 
+  console.log(builds);
   const handleFetchNextPage = () => {
     fetchNextPage();
   };
