@@ -1,6 +1,6 @@
-import { Build, Review } from "@prisma/client";
+import type { Build, Review } from "@prisma/client";
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { router, publicProcedure } from "../trpc";
 
 export const userRouter = router({
 	getProfileData: publicProcedure
@@ -14,14 +14,15 @@ export const userRouter = router({
 				return await ctx.prisma.user.findFirst({
 					where: { name: { equals: input.name, mode: "insensitive" } },
 					select: {
+						id: true,
 						name: true,
+						ban: true,
 						displayName: true,
 						image: true,
 						role: true,
 						score: true,
 						isVerified: true,
 						createdAt: true,
-						id: true,
 						socials: {
 							select: {
 								discord: true,
@@ -44,11 +45,7 @@ export const userRouter = router({
 									},
 								},
 								weapon: true,
-								attachmentSetups: {
-									include: {
-										attachment: true,
-									}
-								},
+								_count: true
 							},
 						},
 						reviews: {
@@ -69,11 +66,7 @@ export const userRouter = router({
 									},
 								},
 								weapon: true,
-								attachmentSetups: {
-									include: {
-										attachment: true,
-									}
-								},
+								_count: true
 							},
 						},
 					},
@@ -187,11 +180,11 @@ export const userRouter = router({
 							},
 						},
 						weapon: true,
-						attachmentSetups: {
-							include: {
-								attachment: true,
+						_count: {
+							select: {
+								attachmentSetups: true,
 							}
-						},
+						}
 					},
 				});
 
@@ -243,11 +236,11 @@ export const userRouter = router({
 							},
 						},
 						weapon: true,
-						attachmentSetups: {
-							include: {
-								attachment: true,
+						_count: {
+							select: {
+								attachmentSetups: true,
 							}
-						},
+						}
 					},
 				});
 

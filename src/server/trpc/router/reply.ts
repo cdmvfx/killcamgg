@@ -14,6 +14,33 @@ export const replyRouter = router({
 		.mutation(async ({ ctx, input }) => {
 
 			try {
+				const banned = await ctx.prisma.bannedUser.findUnique({
+					where: {
+						userId: ctx.session.user.id
+					}
+				});
+
+				if (banned) {
+					throw new TRPCError({
+						code: 'UNAUTHORIZED',
+						message: 'You are banned from posting replies.'
+					})
+				}
+
+			}
+			catch (error) {
+				if (error instanceof TRPCError) {
+					throw error;
+				}
+
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Error posting build.',
+					cause: error
+				})
+			}
+
+			try {
 				// Get user's replies from past 10 minutes
 				const replies = await ctx.prisma.reply.findMany({
 					where: {

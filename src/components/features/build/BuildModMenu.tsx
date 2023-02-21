@@ -13,7 +13,7 @@ const BuildModMenu = (props: Props) => {
   const { buildId, status } = props;
 
   const { mutate: approveBuildMutation, isLoading: approveBuildLoading } =
-    trpc.build.approve.useMutation({
+    trpc.mod.approveBuild.useMutation({
       onSuccess: () => {
         utils.build.getOne.invalidate({ id: buildId });
       },
@@ -22,7 +22,7 @@ const BuildModMenu = (props: Props) => {
   const utils = trpc.useContext();
 
   const { mutate: rejectBuildMutation, isLoading: rejectBuildLoading } =
-    trpc.build.reject.useMutation({
+    trpc.mod.rejectBuild.useMutation({
       onSuccess: () => {
         utils.build.getOne.invalidate({ id: buildId });
       },

@@ -6,6 +6,7 @@ import Panel from "../../components/ui/Panel";
 import { createContextServerSideProps } from "../../server/trpc/context";
 import { appRouter } from "../../server/trpc/router/_app";
 import {
+  FaChevronCircleDown,
   FaDiscord,
   FaInstagram,
   FaTiktok,
@@ -22,44 +23,32 @@ import type {
 import { FaCheckCircle } from "react-icons/fa";
 import PopperButton from "../../components/ui/PopperButton";
 import Link from "next/link";
+import { RankBadge } from "../../components/ui/RankBadge";
+import { RoleBadge } from "../../components/ui/RoleBadge";
+import { isAuthorized } from "../../utils/isAuthorized";
+import UserModMenu from "../../components/features/moderation/UserModMenu";
+import { trpc } from "../../utils/trpc";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
 const ProfilePage: NextPage<PageProps> = (props) => {
-  const { user, sessionUser } = props;
+  const { user: initialUser, sessionUser } = props;
+
+  const { data: user, isLoading: isLoadingUser } =
+    trpc.user.getProfileData.useQuery(
+      { name: initialUser.name },
+      {
+        initialData: initialUser,
+      }
+    );
+
+  if (!user) {
+    return <>No User</>;
+  }
 
   const isCurrentUser = sessionUser && user.id === sessionUser.id;
 
   const userFavorites = user.favorites.map((favorite) => favorite.id);
-
-  const roleBadge = () => {
-    switch (user.role) {
-      case "ADMIN":
-        return <span className="rounded-full bg-orange-600 px-2">Admin</span>;
-      case "MODERATOR":
-        return (
-          <span className="rounded-full bg-orange-600 px-2">Moderator</span>
-        );
-      case "CREATOR":
-        return <span className="rounded-full bg-orange-600 px-2">Creator</span>;
-      default:
-        <></>;
-    }
-  };
-
-  const rankBadge = () => {
-    if (user.score < 20) {
-      return <span className="rounded-full bg-neutral-600 px-2">Scrub</span>;
-    } else if (user.score < 40) {
-      return <span className="rounded-full bg-neutral-600 px-2">Noob</span>;
-    } else if (user.score < 50) {
-      return <span className="rounded-full bg-neutral-600 px-2">Rookie</span>;
-    } else if (user.score < 100) {
-      return <span className="rounded-full bg-neutral-600 px-2">Cracked</span>;
-    } else if (user.score < 200) {
-      return <span className="rounded-full bg-neutral-600 px-2">Goated</span>;
-    }
-  };
 
   return (
     <div className="flex flex-col gap-8 p-0 md:p-4">
@@ -84,8 +73,13 @@ const ProfilePage: NextPage<PageProps> = (props) => {
                   button={<FaCheckCircle className="text-orange-500" />}
                 />
               )}
-              {roleBadge()}
-              {rankBadge()}
+              <RoleBadge role={user.role} />
+              <RankBadge score={user.score} />
+              {sessionUser &&
+                (sessionUser.role === "ADMIN" ||
+                  sessionUser.role === "MODERATOR") && (
+                  <UserModMenu user={user} />
+                )}
             </div>
             <div className="mb-2 h-fit text-xs leading-tight">
               Member Since {new Date(user.createdAt).toDateString()}

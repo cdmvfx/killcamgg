@@ -33,9 +33,7 @@ export const buildRouter = router({
 						}
 					},
 					attachmentSetups: {
-						select: {
-							id: true
-						}
+						_count: true
 					},
 					author: {
 						select: {
@@ -101,7 +99,31 @@ export const buildRouter = router({
 			}
 
 			try {
-				let items = await ctx.prisma.build.findMany(filters);
+				let items = await ctx.prisma.build.findMany({
+					take: limit + 1,
+					cursor: input.cursor ? { id: input.cursor } : undefined,
+					where: {
+						status: "APPROVED"
+					} as Prisma.BuildWhereInput,
+					orderBy: {} as Prisma.BuildOrderByWithRelationInput,
+					include: {
+						weapon: {
+							select: {
+								name: true
+							}
+						},
+						_count: {
+							select: {
+								attachmentSetups: true
+							}
+						},
+						author: {
+							select: {
+								displayName: true,
+							}
+						}
+					}
+				});
 
 				if (input.sort === Sort.Hot) {
 
@@ -143,9 +165,9 @@ export const buildRouter = router({
 					},
 					include: {
 						weapon: true,
-						attachmentSetups: {
-							include: {
-								attachment: true
+						_count: {
+							select: {
+								attachmentSetups: true
 							}
 						},
 						author: {
@@ -172,9 +194,9 @@ export const buildRouter = router({
 					},
 					include: {
 						weapon: true,
-						attachmentSetups: {
-							include: {
-								attachment: true
+						_count: {
+							select: {
+								attachmentSetups: true
 							}
 						},
 						author: {
@@ -295,29 +317,30 @@ export const buildRouter = router({
 		.mutation(async ({ ctx, input }) => {
 
 			try {
-				const pendingBuilds = await ctx.prisma.build.findMany({
+				const banned = await ctx.prisma.bannedUser.findUnique({
 					where: {
-						authorId: ctx.session.user.id,
-						status: "PENDING"
-					},
-					select: {
-						id: true
+						userId: ctx.session.user.id
 					}
-				})
+				});
 
-				if (pendingBuilds.length > 2) {
-					throw new Error('You currently have three builds pending approval. Please wait for them to be approved before submitting another build.');
-				}
-			}
-			catch (error) {
-				if (error instanceof Error) {
+				if (banned) {
 					throw new TRPCError({
-						code: "TOO_MANY_REQUESTS",
-						message: error.message,
-						cause: error
+						code: 'UNAUTHORIZED',
+						message: 'You are banned from posting builds.'
 					})
 				}
-				return;
+
+			}
+			catch (error) {
+				if (error instanceof TRPCError) {
+					throw error;
+				}
+
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Error posting build.',
+					cause: error
+				})
 			}
 
 			try {
@@ -333,7 +356,11 @@ export const buildRouter = router({
 					}
 				})
 			} catch (error) {
-				console.log(error);
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Error posting build.',
+					cause: error
+				})
 			}
 		}),
 	update: protectedProcedure
@@ -392,58 +419,6 @@ export const buildRouter = router({
 				})
 			} catch (error) {
 				console.log(error);
-			}
-		}),
-	approve: modOrAdminProcedure
-		.input(
-			z.object({
-				id: z.string()
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			try {
-				await ctx.prisma.build.update({
-					where: { id: input.id },
-					data: {
-						status: "APPROVED"
-					}
-				})
-
-				await ctx.prisma.activityLog.create({
-					data: {
-						userId: ctx.session.user.id,
-						type: "APPROVED_BUILD",
-						buildId: input.id
-					}
-				})
-			} catch (error) {
-				console.log('Error approving build.', error);
-			}
-		}),
-	reject: modOrAdminProcedure
-		.input(
-			z.object({
-				id: z.string()
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			try {
-				await ctx.prisma.build.update({
-					where: { id: input.id },
-					data: {
-						status: "REJECTED"
-					}
-				})
-
-				await ctx.prisma.activityLog.create({
-					data: {
-						userId: ctx.session.user.id,
-						type: "REJECTED_BUILD",
-						buildId: input.id
-					}
-				})
-			} catch (error) {
-				console.log('Error approving build.', error);
 			}
 		}),
 	toggleFavorite: protectedProcedure
