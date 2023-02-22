@@ -79,8 +79,7 @@ export const reviewRouter = router({
 						buildId: input.buildId,
 						authorId: ctx.session.user.id,
 						isLike: input.isLike,
-						content: input.content,
-						deletedAt: null
+						content: input.content
 					}
 				})
 			}
@@ -97,8 +96,7 @@ export const reviewRouter = router({
 			// Calculate new average rating
 			const reviews = await ctx.prisma.review.findMany({
 				where: {
-					buildId: input.buildId,
-					deletedAt: null
+					buildId: input.buildId
 				},
 				select: {
 					isLike: true
@@ -155,7 +153,6 @@ export const reviewRouter = router({
 					data: {
 						isLike: input.isLike,
 						content: input.content,
-						deletedAt: null
 					}
 				})
 			}
@@ -167,7 +164,6 @@ export const reviewRouter = router({
 			const reviews = await ctx.prisma.review.findMany({
 				where: {
 					buildId: input.buildId,
-					deletedAt: null
 				},
 				select: {
 					isLike: true
@@ -213,12 +209,9 @@ export const reviewRouter = router({
 		)
 		.mutation(async ({ ctx, input }) => {
 			try {
-				await ctx.prisma.review.update({
+				await ctx.prisma.review.delete({
 					where: {
 						id: input.id
-					},
-					data: {
-						deletedAt: new Date()
 					}
 				})
 			}
@@ -230,7 +223,6 @@ export const reviewRouter = router({
 			const reviews = await ctx.prisma.review.findMany({
 				where: {
 					buildId: input.buildId,
-					deletedAt: null
 				},
 				select: {
 					isLike: true
@@ -338,7 +330,6 @@ export const reviewRouter = router({
 			const reviews = await ctx.prisma.review.findMany({
 				where: {
 					buildId: input.buildId,
-					deletedAt: null
 				},
 				select: {
 					isLike: true

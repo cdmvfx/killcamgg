@@ -3,13 +3,7 @@ import { IoMdHeart, IoMdStar } from "react-icons/io";
 import Spinner from "../../ui/Spinner";
 import Panel from "../../ui/Panel";
 import type { BuildFromBuildGetAllResult } from "../../../types/Builds";
-import { FaThumbsUp } from "react-icons/fa";
-import {
-  MdThumbDownOffAlt,
-  MdThumbUpOffAlt,
-  MdThumbDown,
-  MdThumbUp,
-} from "react-icons/md";
+import { MdThumbDown, MdThumbUp } from "react-icons/md";
 
 type BuildCardProps = {
   build: BuildFromBuildGetAllResult;

@@ -77,7 +77,6 @@ export const modRouter = router({
 				await ctx.prisma.activityLog.create({
 					data: {
 						modId: ctx.session.user.id,
-						buildId: input.buildId,
 						type: "DELETED_BUILD",
 						notes: input.reason
 					}
@@ -106,7 +105,6 @@ export const modRouter = router({
 				await ctx.prisma.activityLog.create({
 					data: {
 						modId: ctx.session.user.id,
-						reviewId: input.reviewId,
 						type: "DELETED_REVIEW",
 						notes: input.reason
 					}
@@ -126,16 +124,14 @@ export const modRouter = router({
 		}))
 		.mutation(async ({ ctx, input }) => {
 			try {
+
 				await ctx.prisma.reply.delete({
-					where: {
-						id: input.replyId
-					}
-				});
+					where: { id: input.replyId }
+				})
 
 				await ctx.prisma.activityLog.create({
 					data: {
 						modId: ctx.session.user.id,
-						replyId: input.replyId,
 						type: "DELETED_REPLY",
 						notes: input.reason
 					}
@@ -167,7 +163,6 @@ export const modRouter = router({
 					data: {
 						userId: ctx.session.user.id,
 						type: "APPROVED_BUILD",
-						buildId: input.id
 					}
 				})
 			} catch (error) {
@@ -194,11 +189,69 @@ export const modRouter = router({
 					data: {
 						userId: ctx.session.user.id,
 						type: "REJECTED_BUILD",
-						buildId: input.id
 					}
 				})
 			} catch (error) {
 				console.log('Error approving build.', error);
+			}
+		}),
+
+	getAllPendingBuilds: modOrAdminProcedure
+		.query(async ({ ctx }) => {
+			try {
+				return await ctx.prisma.build.findMany({
+					where: {
+						status: "PENDING"
+					},
+					include: {
+						weapon: true,
+						_count: {
+							select: {
+								attachmentSetups: true
+							}
+						},
+						author: {
+							select: {
+								id: true,
+								name: true,
+								displayName: true,
+								image: true,
+							},
+						},
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in build.getAllPendingApproval: ');
+			}
+		}),
+	getAllRejectedBuilds: modOrAdminProcedure
+		.query(async ({ ctx }) => {
+			try {
+				return await ctx.prisma.build.findMany({
+					where: {
+						status: "REJECTED"
+					},
+					include: {
+						weapon: true,
+						_count: {
+							select: {
+								attachmentSetups: true
+							}
+						},
+						author: {
+							select: {
+								id: true,
+								name: true,
+								displayName: true,
+								image: true,
+							},
+						},
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in build.getAllPendingApproval: ');
 			}
 		}),
 

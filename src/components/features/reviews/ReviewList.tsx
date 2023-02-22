@@ -11,6 +11,7 @@ import { trpc } from "../../../utils/trpc";
 import Button from "../../ui/Button";
 import ReplyForm from "./ReplyForm";
 import ReplyItem from "./ReplyItem";
+import ReviewModMenu from "../moderation/ReviewModMenu";
 
 type ReviewListProps = {
   reviews: ReviewFromBuildGetOneResult[];
@@ -197,6 +198,11 @@ export const ReviewItem = (props: ReviewItemProps) => {
               variant="plain"
               onClick={() => setIsReplyFormOpen((prev) => !prev)}
             />
+            {sessionUser &&
+              (sessionUser.role === "ADMIN" ||
+                sessionUser.role === "MODERATOR") && (
+                <ReviewModMenu buildId={buildId} reviewId={review.id} />
+              )}
           </div>
           {isReplyFormOpen && (
             <ReplyForm

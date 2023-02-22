@@ -156,64 +156,6 @@ export const buildRouter = router({
 				console.log(error);
 			}
 		}),
-	getAllPending: modOrAdminProcedure
-		.query(async ({ ctx }) => {
-			try {
-				return await ctx.prisma.build.findMany({
-					where: {
-						status: "PENDING"
-					},
-					include: {
-						weapon: true,
-						_count: {
-							select: {
-								attachmentSetups: true
-							}
-						},
-						author: {
-							select: {
-								id: true,
-								name: true,
-								displayName: true,
-								image: true,
-							},
-						},
-					}
-				})
-			}
-			catch (error) {
-				console.warn('Error in build.getAllPendingApproval: ');
-			}
-		}),
-	getAllRejected: modOrAdminProcedure
-		.query(async ({ ctx }) => {
-			try {
-				return await ctx.prisma.build.findMany({
-					where: {
-						status: "REJECTED"
-					},
-					include: {
-						weapon: true,
-						_count: {
-							select: {
-								attachmentSetups: true
-							}
-						},
-						author: {
-							select: {
-								id: true,
-								name: true,
-								displayName: true,
-								image: true,
-							},
-						},
-					}
-				})
-			}
-			catch (error) {
-				console.warn('Error in build.getAllPendingApproval: ');
-			}
-		}),
 	getOne: publicProcedure
 		.input(
 			z.object({
@@ -273,7 +215,6 @@ export const buildRouter = router({
 												}
 											}
 										},
-										deletedAt: true,
 										createdAt: true,
 										updatedAt: true,
 										likes: {

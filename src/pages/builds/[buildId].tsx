@@ -7,7 +7,8 @@ import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
 import { trpc } from "../../utils/trpc";
 import React, { useState } from "react";
-import { BuildForm, BuildModMenu } from "../../components/features/build";
+import { BuildForm } from "../../components/features/build";
+import BuildModMenu from "../../components/features/moderation/BuildModMenu";
 import {
   MdThumbDownOffAlt,
   MdThumbUpOffAlt,
@@ -395,13 +396,7 @@ const BuildReviews = (
   const { build, sessionUser, existingReview } = props;
 
   const [showReviewForm, setShowReviewForm] = useState(
-    existingReview && existingReview.content && !existingReview.deletedAt
-      ? false
-      : true
-  );
-
-  const validReviews = build.reviews.filter(
-    (review) => review.content !== null && !review.deletedAt
+    existingReview && existingReview.content ? false : true
   );
 
   return (
@@ -409,9 +404,9 @@ const BuildReviews = (
       <div className="flex flex-col">
         <div className="flex flex-col md:flex-row md:justify-between">
           <Heading>
-            {validReviews.length === 1
+            {build.reviews.length === 1
               ? "1 Review"
-              : validReviews.length + " Reviews"}
+              : build.reviews.length + " Reviews"}
           </Heading>
           {!sessionUser && (
             <Link href="/signin">
@@ -433,7 +428,7 @@ const BuildReviews = (
             />
           </Panel>
         )}
-        {!validReviews.length ? (
+        {!build.reviews.length ? (
           <Panel>
             <div className="text-center">No reviews yet!</div>
           </Panel>
@@ -441,7 +436,7 @@ const BuildReviews = (
           <Panel>
             <ReviewList
               sessionUser={sessionUser}
-              reviews={validReviews}
+              reviews={build.reviews}
               buildId={build.id}
               setShowReviewForm={setShowReviewForm}
             />

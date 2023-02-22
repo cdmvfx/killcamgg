@@ -10,6 +10,7 @@ import Alert from "../../ui/Alert";
 import Spinner from "../../ui/Spinner";
 import ModalButton from "../../ui/ModalButton";
 import { trpc } from "../../../utils/trpc";
+import ReplyModMenu from "../moderation/ReplyModMenu";
 
 const ReplyItem = ({
   reviewId,
@@ -33,7 +34,7 @@ const ReplyItem = ({
 }) => {
   const [isReplyFormOpen, setIsReplyFormOpen] = useState(false);
 
-  if (!reply || reply.deletedAt) return <></>;
+  if (!reply) return <></>;
 
   const isLiked = sessionUser
     ? reply.likes.some((like) => {
@@ -48,11 +49,7 @@ const ReplyItem = ({
         <div>
           <Link href={`/${reply.author.name}`} className="relative">
             <Image
-              src={
-                reply.deletedAt
-                  ? "/favicon.ico"
-                  : (reply.author.image as string)
-              }
+              src={reply.author.image}
               className="mt-1 rounded-full"
               width={20}
               height={20}
@@ -72,7 +69,7 @@ const ReplyItem = ({
               Replying to{" "}
               <Link
                 className="text-neutral-400 transition-all hover:text-orange-500"
-                href={`/${reply.reply.author.name as string}`}
+                href={`/${reply.reply.author.name}`}
               >
                 {reply.reply.author.displayName}
               </Link>
@@ -107,6 +104,11 @@ const ReplyItem = ({
               variant="plain"
               onClick={() => setIsReplyFormOpen((prev) => !prev)}
             />
+            {sessionUser &&
+              (sessionUser.role === "ADMIN" ||
+                sessionUser.role === "MODERATOR") && (
+                <ReplyModMenu buildId={buildId} replyId={reply.id} />
+              )}
           </div>
         </div>
       </div>

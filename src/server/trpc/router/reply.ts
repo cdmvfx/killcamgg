@@ -126,11 +126,8 @@ export const replyRouter = router({
 				throw new Error("Not logged in");
 			}
 			try {
-				await ctx.prisma.reply.update({
-					where: { id: input.replyId },
-					data: {
-						deletedAt: new Date()
-					}
+				await ctx.prisma.reply.delete({
+					where: { id: input.replyId }
 				})
 			}
 			catch (e) {

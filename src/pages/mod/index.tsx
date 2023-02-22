@@ -9,8 +9,8 @@ import { isAuthorized } from "../../utils/isAuthorized";
 import { trpc } from "../../utils/trpc";
 
 const ModPage = () => {
-  const { data: pendingBuilds } = trpc.build.getAllPending.useQuery();
-  const { data: rejectedBuilds } = trpc.build.getAllRejected.useQuery();
+  const { data: pendingBuilds } = trpc.mod.getAllPendingBuilds.useQuery();
+  const { data: rejectedBuilds } = trpc.mod.getAllRejectedBuilds.useQuery();
 
   const buildTabs = ["Pending", "Rejected"];
 

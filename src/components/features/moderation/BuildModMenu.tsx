@@ -1,3 +1,4 @@
+import { FaChevronCircleDown } from "react-icons/fa";
 import { trpc } from "../../../utils/trpc";
 import Button from "../../ui/Button";
 import PopperButton from "../../ui/PopperButton";
@@ -12,14 +13,14 @@ type Props = {
 const BuildModMenu = (props: Props) => {
   const { buildId, status } = props;
 
+  const utils = trpc.useContext();
+
   const { mutate: approveBuildMutation, isLoading: approveBuildLoading } =
     trpc.mod.approveBuild.useMutation({
       onSuccess: () => {
         utils.build.getOne.invalidate({ id: buildId });
       },
     });
-
-  const utils = trpc.useContext();
 
   const { mutate: rejectBuildMutation, isLoading: rejectBuildLoading } =
     trpc.mod.rejectBuild.useMutation({
@@ -46,25 +47,29 @@ const BuildModMenu = (props: Props) => {
         <>
           <PopperButton
             showOn="click"
-            button={<StatusBadge status={status} />}
             tooltip={
               <>
-                <Button
-                  text="Approve Build"
-                  onClick={approveBuild}
-                  variant="plain"
-                  width="full"
-                  classNames="mb-4 p-4 bg-emerald-600 hover:bg-emerald-500 border-transparent"
-                />
-                <Button
-                  text="Reject Build"
-                  onClick={rejectBuild}
-                  width="full"
-                  variant="plain"
-                  classNames="bg-red-600 p-4  hover:bg-red-500 border-transparent"
-                />
+                <div className="flex w-full justify-end">
+                  {status === "APPROVED" && (
+                    <Button
+                      text="Reject Build"
+                      variant="plain"
+                      classNames="bg-red-600 text-white py-2 px-4 hover:bg-red-500"
+                      onClick={rejectBuild}
+                    />
+                  )}
+                  {status === "REJECTED" && (
+                    <Button
+                      text="Approve Build"
+                      variant="plain"
+                      classNames="bg-emerald-600 text-white py-2 px-4 hover:bg-emerald-500"
+                      onClick={approveBuild}
+                    />
+                  )}
+                </div>
               </>
             }
+            button={<FaChevronCircleDown />}
           />
         </>
       )}

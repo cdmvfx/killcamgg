@@ -1,23 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  // NOTE: When using postgresql, mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-  // Further reading:
-  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
   url      = env("DATABASE_URL")
-}
-
-model Example {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 // Necessary for Next auth
@@ -85,7 +72,7 @@ model BannedUser {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   reason    String
 }
 
@@ -100,7 +87,7 @@ model VerificationToken {
 model ScoreLog {
   id     String    @id @default(cuid())
   userId String
-  user   User      @relation(fields: [userId], references: [id])
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   score  Int
   name   ScoreName
 }
@@ -116,7 +103,7 @@ enum ScoreName {
 model Socials {
   id        String @id @default(cuid())
   userId    String @unique
-  user      User   @relation(fields: [userId], references: [id])
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   twitch    String @default("")
   youtube   String @default("")
   twitter   String @default("")
@@ -130,7 +117,7 @@ model Build {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   authorId         String
-  author           User              @relation("User Builds", fields: [authorId], references: [id])
+  author           User              @relation("User Builds", fields: [authorId], references: [id], onDelete: Cascade)
   title            String
   description      String?
   weapon           Weapon            @relation(fields: [weaponId], references: [id])
@@ -145,7 +132,6 @@ model Build {
   totalRatings     Int               @default(0)
   totalReviews     Int               @default(0)
   status           BuildStatus       @default(APPROVED)
-  activityLogs     ActivityLog[]
 }
 
 enum BuildStatus {
@@ -163,7 +149,7 @@ enum BuildTag {
 model AttachmentSetup {
   id           String     @id @default(cuid())
   buildId      String
-  build        Build      @relation(fields: [buildId], references: [id])
+  build        Build      @relation(fields: [buildId], references: [id], onDelete: Cascade)
   attachmentId Int
   attachment   Attachment @relation(fields: [attachmentId], references: [id])
   horizontal   String
@@ -216,38 +202,34 @@ enum AttachmentCategory {
 }
 
 model Review {
-  id           String        @id @default(cuid())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  authorId     String
-  author       User          @relation(fields: [authorId], references: [id])
-  buildId      String
-  build        Build         @relation(fields: [buildId], references: [id])
-  isLike       Boolean?
-  content      String?
-  likes        User[]        @relation("Review Likes")
-  activityLogs ActivityLog[]
-  replies      Reply[]
-  deletedAt    DateTime?
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  buildId   String
+  build     Build    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  isLike    Boolean?
+  content   String?
+  likes     User[]   @relation("Review Likes")
+  replies   Reply[]
 
   @@unique([authorId, buildId])
 }
 
 model Reply {
-  id           String        @id @default(cuid())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  authorId     String
-  author       User          @relation(fields: [authorId], references: [id])
-  reviewId     String
-  review       Review        @relation(fields: [reviewId], references: [id])
-  replyId      String?
-  reply        Reply?        @relation("Reply Replies", fields: [replyId], references: [id])
-  replies      Reply[]       @relation("Reply Replies")
-  content      String
-  likes        User[]        @relation("Reply Likes")
-  deletedAt    DateTime?
-  activityLogs ActivityLog[]
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  replyId   String?
+  reply     Reply?   @relation("Reply Replies", fields: [replyId], references: [id], onDelete: Cascade)
+  replies   Reply[]  @relation("Reply Replies")
+  content   String
+  likes     User[]   @relation("Reply Likes")
 }
 
 enum ActivityType {
@@ -267,14 +249,8 @@ model ActivityLog {
   createdAt DateTime     @default(now())
   type      ActivityType
   modId     String?
-  mod       User?        @relation("Mod Activity Logs", fields: [modId], references: [id])
+  mod       User?        @relation("Mod Activity Logs", fields: [modId], references: [id], onDelete: Cascade)
   userId    String?
-  user      User?        @relation("User Activity Logs", fields: [userId], references: [id])
-  buildId   String?
-  build     Build?       @relation(fields: [buildId], references: [id])
-  reviewId  String?
-  review    Review?      @relation(fields: [reviewId], references: [id])
-  replyId   String?
-  reply     Reply?       @relation(fields: [replyId], references: [id])
+  user      User?        @relation("User Activity Logs", fields: [userId], references: [id], onDelete: SetNull)
   notes     String?
 }
