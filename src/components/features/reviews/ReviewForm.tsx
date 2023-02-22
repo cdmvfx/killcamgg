@@ -161,11 +161,7 @@ const ReviewForm = (props: ReviewFormProps) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <h3>
-        {existingReview && !existingReview.deletedAt
-          ? "Edit Your Review"
-          : "Publish A Review"}
-      </h3>
+      <h3>{existingReview ? "Edit Your Review" : "Publish A Review"}</h3>
       <div>
         <label htmlFor="rating">Rating</label>
         <div className="flex cursor-pointer text-4xl text-orange-400">
@@ -212,7 +208,7 @@ const ReviewForm = (props: ReviewFormProps) => {
               text={existingReview ? "Publish" : "Publish"}
               onClick={handleSubmitClick}
             />
-            {existingReview && !existingReview.deletedAt && (
+            {existingReview && (
               <>
                 <Button
                   text="Delete"

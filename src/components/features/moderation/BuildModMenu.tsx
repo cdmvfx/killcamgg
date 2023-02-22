@@ -3,7 +3,6 @@ import { trpc } from "../../../utils/trpc";
 import Button from "../../ui/Button";
 import PopperButton from "../../ui/PopperButton";
 import Spinner from "../../ui/Spinner";
-import StatusBadge from "../../ui/StatusBadge";
 
 type Props = {
   buildId: string;

@@ -161,7 +161,7 @@ export const modRouter = router({
 
 				await ctx.prisma.activityLog.create({
 					data: {
-						userId: ctx.session.user.id,
+						modId: ctx.session.user.id,
 						type: "APPROVED_BUILD",
 					}
 				})
@@ -187,7 +187,7 @@ export const modRouter = router({
 
 				await ctx.prisma.activityLog.create({
 					data: {
-						userId: ctx.session.user.id,
+						modId: ctx.session.user.id,
 						type: "REJECTED_BUILD",
 					}
 				})
