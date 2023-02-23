@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { DateRange, Sort } from "../../../types/Filters";
 import hot from "../../../utils/ranking";
-import { router, publicProcedure, protectedProcedure, modOrAdminProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure } from "../trpc";
 
 export const buildRouter = router({
 	getAll: publicProcedure
@@ -33,9 +33,7 @@ export const buildRouter = router({
 						}
 					},
 					attachmentSetups: {
-						select: {
-							id: true
-						}
+						_count: true
 					},
 					author: {
 						select: {
@@ -101,7 +99,31 @@ export const buildRouter = router({
 			}
 
 			try {
-				let items = await ctx.prisma.build.findMany(filters);
+				let items = await ctx.prisma.build.findMany({
+					take: limit + 1,
+					cursor: input.cursor ? { id: input.cursor } : undefined,
+					where: {
+						status: "APPROVED"
+					} as Prisma.BuildWhereInput,
+					orderBy: {} as Prisma.BuildOrderByWithRelationInput,
+					include: {
+						weapon: {
+							select: {
+								name: true
+							}
+						},
+						_count: {
+							select: {
+								attachmentSetups: true
+							}
+						},
+						author: {
+							select: {
+								displayName: true,
+							}
+						}
+					}
+				});
 
 				if (input.sort === Sort.Hot) {
 
@@ -132,64 +154,6 @@ export const buildRouter = router({
 			catch (error) {
 				console.warn('Error in getAll: ');
 				console.log(error);
-			}
-		}),
-	getAllPending: modOrAdminProcedure
-		.query(async ({ ctx }) => {
-			try {
-				return await ctx.prisma.build.findMany({
-					where: {
-						status: "PENDING"
-					},
-					include: {
-						weapon: true,
-						attachmentSetups: {
-							include: {
-								attachment: true
-							}
-						},
-						author: {
-							select: {
-								id: true,
-								name: true,
-								displayName: true,
-								image: true,
-							},
-						},
-					}
-				})
-			}
-			catch (error) {
-				console.warn('Error in build.getAllPendingApproval: ');
-			}
-		}),
-	getAllRejected: modOrAdminProcedure
-		.query(async ({ ctx }) => {
-			try {
-				return await ctx.prisma.build.findMany({
-					where: {
-						status: "REJECTED"
-					},
-					include: {
-						weapon: true,
-						attachmentSetups: {
-							include: {
-								attachment: true
-							}
-						},
-						author: {
-							select: {
-								id: true,
-								name: true,
-								displayName: true,
-								image: true,
-							},
-						},
-					}
-				})
-			}
-			catch (error) {
-				console.warn('Error in build.getAllPendingApproval: ');
 			}
 		}),
 	getOne: publicProcedure
@@ -251,7 +215,6 @@ export const buildRouter = router({
 												}
 											}
 										},
-										deletedAt: true,
 										createdAt: true,
 										updatedAt: true,
 										likes: {
@@ -295,33 +258,34 @@ export const buildRouter = router({
 		.mutation(async ({ ctx, input }) => {
 
 			try {
-				const pendingBuilds = await ctx.prisma.build.findMany({
+				const banned = await ctx.prisma.bannedUser.findUnique({
 					where: {
-						authorId: ctx.session.user.id,
-						status: "PENDING"
-					},
-					select: {
-						id: true
+						userId: ctx.session.user.id
 					}
-				})
+				});
 
-				if (pendingBuilds.length > 2) {
-					throw new Error('You currently have three builds pending approval. Please wait for them to be approved before submitting another build.');
-				}
-			}
-			catch (error) {
-				if (error instanceof Error) {
+				if (banned) {
 					throw new TRPCError({
-						code: "TOO_MANY_REQUESTS",
-						message: error.message,
-						cause: error
+						code: 'UNAUTHORIZED',
+						message: 'You are banned from posting builds.'
 					})
 				}
-				return;
+
+			}
+			catch (error) {
+				if (error instanceof TRPCError) {
+					throw error;
+				}
+
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Error posting build.',
+					cause: error
+				})
 			}
 
 			try {
-				await ctx.prisma.build.create({
+				return await ctx.prisma.build.create({
 					data: {
 						authorId: ctx.session.user.id,
 						title: input.title,
@@ -333,7 +297,11 @@ export const buildRouter = router({
 					}
 				})
 			} catch (error) {
-				console.log(error);
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Error posting build.',
+					cause: error
+				})
 			}
 		}),
 	update: protectedProcedure
@@ -394,58 +362,6 @@ export const buildRouter = router({
 				console.log(error);
 			}
 		}),
-	approve: modOrAdminProcedure
-		.input(
-			z.object({
-				id: z.string()
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			try {
-				await ctx.prisma.build.update({
-					where: { id: input.id },
-					data: {
-						status: "APPROVED"
-					}
-				})
-
-				await ctx.prisma.activityLog.create({
-					data: {
-						userId: ctx.session.user.id,
-						type: "APPROVED_BUILD",
-						buildId: input.id
-					}
-				})
-			} catch (error) {
-				console.log('Error approving build.', error);
-			}
-		}),
-	reject: modOrAdminProcedure
-		.input(
-			z.object({
-				id: z.string()
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			try {
-				await ctx.prisma.build.update({
-					where: { id: input.id },
-					data: {
-						status: "REJECTED"
-					}
-				})
-
-				await ctx.prisma.activityLog.create({
-					data: {
-						userId: ctx.session.user.id,
-						type: "REJECTED_BUILD",
-						buildId: input.id
-					}
-				})
-			} catch (error) {
-				console.log('Error approving build.', error);
-			}
-		}),
 	toggleFavorite: protectedProcedure
 		.input(
 			z.object({
@@ -493,5 +409,28 @@ export const buildRouter = router({
 					status: "PENDING"
 				}
 			})
+		}),
+
+	report: protectedProcedure
+		.input(
+			z.object({
+				buildId: z.string(),
+				reason: z.string()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return ctx.prisma.report.create({
+					data: {
+						authorId: ctx.session.user.id,
+						buildId: input.buildId,
+						notes: input.reason
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in build.report: ');
+				console.log(error);
+			}
 		})
 });

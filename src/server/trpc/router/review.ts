@@ -47,13 +47,39 @@ export const reviewRouter = router({
 		.mutation(async ({ ctx, input }) => {
 
 			try {
+				const banned = await ctx.prisma.bannedUser.findUnique({
+					where: {
+						userId: ctx.session.user.id
+					}
+				});
+
+				if (banned) {
+					throw new TRPCError({
+						code: 'UNAUTHORIZED',
+						message: 'You are banned from reviewing builds.'
+					})
+				}
+
+			}
+			catch (error) {
+				if (error instanceof TRPCError) {
+					throw error;
+				}
+
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Error posting build.',
+					cause: error
+				})
+			}
+
+			try {
 				await ctx.prisma.review.create({
 					data: {
 						buildId: input.buildId,
 						authorId: ctx.session.user.id,
 						isLike: input.isLike,
-						content: input.content,
-						deletedAt: null
+						content: input.content
 					}
 				})
 			}
@@ -70,8 +96,7 @@ export const reviewRouter = router({
 			// Calculate new average rating
 			const reviews = await ctx.prisma.review.findMany({
 				where: {
-					buildId: input.buildId,
-					deletedAt: null
+					buildId: input.buildId
 				},
 				select: {
 					isLike: true
@@ -128,7 +153,6 @@ export const reviewRouter = router({
 					data: {
 						isLike: input.isLike,
 						content: input.content,
-						deletedAt: null
 					}
 				})
 			}
@@ -140,7 +164,6 @@ export const reviewRouter = router({
 			const reviews = await ctx.prisma.review.findMany({
 				where: {
 					buildId: input.buildId,
-					deletedAt: null
 				},
 				select: {
 					isLike: true
@@ -186,12 +209,9 @@ export const reviewRouter = router({
 		)
 		.mutation(async ({ ctx, input }) => {
 			try {
-				await ctx.prisma.review.update({
+				await ctx.prisma.review.delete({
 					where: {
 						id: input.id
-					},
-					data: {
-						deletedAt: new Date()
 					}
 				})
 			}
@@ -203,7 +223,6 @@ export const reviewRouter = router({
 			const reviews = await ctx.prisma.review.findMany({
 				where: {
 					buildId: input.buildId,
-					deletedAt: null
 				},
 				select: {
 					isLike: true
@@ -311,7 +330,6 @@ export const reviewRouter = router({
 			const reviews = await ctx.prisma.review.findMany({
 				where: {
 					buildId: input.buildId,
-					deletedAt: null
 				},
 				select: {
 					isLike: true
@@ -346,6 +364,29 @@ export const reviewRouter = router({
 			}
 			catch (error) {
 				console.log('Error calculating new average rating in review.changeLike: ', error);
+			}
+		}),
+
+	report: protectedProcedure
+		.input(
+			z.object({
+				reviewId: z.string(),
+				reason: z.string()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return ctx.prisma.report.create({
+					data: {
+						authorId: ctx.session.user.id,
+						reviewId: input.reviewId,
+						notes: input.reason
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in review.report: ');
+				console.log(error);
 			}
 		})
 })

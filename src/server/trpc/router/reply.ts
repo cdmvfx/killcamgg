@@ -14,6 +14,33 @@ export const replyRouter = router({
 		.mutation(async ({ ctx, input }) => {
 
 			try {
+				const banned = await ctx.prisma.bannedUser.findUnique({
+					where: {
+						userId: ctx.session.user.id
+					}
+				});
+
+				if (banned) {
+					throw new TRPCError({
+						code: 'UNAUTHORIZED',
+						message: 'You are banned from posting replies.'
+					})
+				}
+
+			}
+			catch (error) {
+				if (error instanceof TRPCError) {
+					throw error;
+				}
+
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Error posting build.',
+					cause: error
+				})
+			}
+
+			try {
 				// Get user's replies from past 10 minutes
 				const replies = await ctx.prisma.reply.findMany({
 					where: {
@@ -99,15 +126,35 @@ export const replyRouter = router({
 				throw new Error("Not logged in");
 			}
 			try {
-				await ctx.prisma.reply.update({
-					where: { id: input.replyId },
-					data: {
-						deletedAt: new Date()
-					}
+				await ctx.prisma.reply.delete({
+					where: { id: input.replyId }
 				})
 			}
 			catch (e) {
 				console.log(e);
+			}
+		}),
+
+	report: protectedProcedure
+		.input(
+			z.object({
+				replyId: z.string(),
+				reason: z.string()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return ctx.prisma.report.create({
+					data: {
+						authorId: ctx.session.user.id,
+						replyId: input.replyId,
+						notes: input.reason
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in reply.report: ');
+				console.log(error);
 			}
 		})
 })

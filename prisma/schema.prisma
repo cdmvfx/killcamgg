@@ -1,23 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  // NOTE: When using postgresql, mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-  // Further reading:
-  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
   url      = env("DATABASE_URL")
-}
-
-model Example {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 // Necessary for Next auth
@@ -48,27 +35,32 @@ model Session {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  createdAt     DateTime      @default(now())
-  name          String        @unique
-  displayName   String        @default("Anonymous")
-  email         String        @unique
-  emailVerified DateTime?
-  image         String
-  isVerified    Boolean       @default(false)
-  role          Role          @default(USER)
-  score         Int           @default(0)
-  accounts      Account[]
-  sessions      Session[]
-  builds        Build[]       @relation("User Builds")
-  reviews       Review[]
-  favorites     Build[]       @relation("User Favorites")
-  views         Build[]       @relation("User Views")
-  socials       Socials?
-  activityLogs  ActivityLog[]
-  likedReviews  Review[]      @relation("Review Likes")
-  replies       Reply[]
-  likedReplies  Reply[]       @relation("Reply Likes")
+  id               String        @id @default(cuid())
+  createdAt        DateTime      @default(now())
+  name             String        @unique
+  displayName      String        @default("Anonymous")
+  email            String        @unique
+  emailVerified    DateTime?
+  image            String
+  isVerified       Boolean       @default(false)
+  role             Role          @default(USER)
+  score            Int           @default(0)
+  accounts         Account[]
+  sessions         Session[]
+  builds           Build[]       @relation("User Builds")
+  reviews          Review[]
+  favorites        Build[]       @relation("User Favorites")
+  views            Build[]       @relation("User Views")
+  socials          Socials?
+  likedReviews     Review[]      @relation("Review Likes")
+  replies          Reply[]
+  likedReplies     Reply[]       @relation("Reply Likes")
+  scoreLog         ScoreLog[]
+  ban              BannedUser?
+  activityLogs     ActivityLog[] @relation("User Activity Logs")
+  modLogs          ActivityLog[] @relation("Mod Activity Logs")
+  submittedReports Report[]      @relation("Submitted Reports")
+  reports          Report[]      @relation("Reports")
 }
 
 enum Role {
@@ -76,6 +68,14 @@ enum Role {
   MODERATOR
   USER
   CREATOR
+}
+
+model BannedUser {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason    String
 }
 
 model VerificationToken {
@@ -86,10 +86,26 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model ScoreLog {
+  id     String    @id @default(cuid())
+  userId String
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score  Int
+  name   ScoreName
+}
+
+enum ScoreName {
+  POSTED_BUILD
+  POSTED_REVIEW
+  POSTED_REPLY
+  RECEIVED_BUILD_LIKE
+  RECEIVED_BUILD_FAVORITE
+}
+
 model Socials {
   id        String @id @default(cuid())
   userId    String @unique
-  user      User   @relation(fields: [userId], references: [id])
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   twitch    String @default("")
   youtube   String @default("")
   twitter   String @default("")
@@ -103,7 +119,7 @@ model Build {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   authorId         String
-  author           User              @relation("User Builds", fields: [authorId], references: [id])
+  author           User              @relation("User Builds", fields: [authorId], references: [id], onDelete: Cascade)
   title            String
   description      String?
   weapon           Weapon            @relation(fields: [weaponId], references: [id])
@@ -117,8 +133,8 @@ model Build {
   totalDislikes    Int               @default(0)
   totalRatings     Int               @default(0)
   totalReviews     Int               @default(0)
-  status           BuildStatus       @default(PENDING)
-  activityLogs     ActivityLog[]
+  status           BuildStatus       @default(APPROVED)
+  reports          Report[]
 }
 
 enum BuildStatus {
@@ -127,10 +143,16 @@ enum BuildStatus {
   REJECTED
 }
 
+enum BuildTag {
+  LONG_RANGE
+  MID_RANGE
+  SHORT_RANGE
+}
+
 model AttachmentSetup {
   id           String     @id @default(cuid())
   buildId      String
-  build        Build      @relation(fields: [buildId], references: [id])
+  build        Build      @relation(fields: [buildId], references: [id], onDelete: Cascade)
   attachmentId Int
   attachment   Attachment @relation(fields: [attachmentId], references: [id])
   horizontal   String
@@ -183,37 +205,36 @@ enum AttachmentCategory {
 }
 
 model Review {
-  id           String        @id @default(cuid())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  authorId     String
-  author       User          @relation(fields: [authorId], references: [id])
-  buildId      String
-  build        Build         @relation(fields: [buildId], references: [id])
-  isLike       Boolean?
-  content      String?
-  likes        User[]        @relation("Review Likes")
-  activityLogs ActivityLog[]
-  replies      Reply[]
-  deletedAt    DateTime?
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  buildId   String
+  build     Build    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  isLike    Boolean?
+  content   String?
+  likes     User[]   @relation("Review Likes")
+  replies   Reply[]
+  reports   Report[]
 
   @@unique([authorId, buildId])
 }
 
 model Reply {
-  id        String    @id @default(cuid())
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   authorId  String
-  author    User      @relation(fields: [authorId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   reviewId  String
-  review    Review    @relation(fields: [reviewId], references: [id])
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
   replyId   String?
-  reply     Reply?    @relation("Reply Replies", fields: [replyId], references: [id])
-  replies   Reply[]   @relation("Reply Replies")
+  reply     Reply?   @relation("Reply Replies", fields: [replyId], references: [id], onDelete: Cascade)
+  replies   Reply[]  @relation("Reply Replies")
   content   String
-  likes     User[]    @relation("Reply Likes")
-  deletedAt DateTime?
+  likes     User[]   @relation("Reply Likes")
+  reports   Report[]
 }
 
 enum ActivityType {
@@ -225,16 +246,32 @@ enum ActivityType {
   VERIFIED_USER
   UNVERIFIED_USER
   DELETED_REVIEW
+  DELETED_REPLY
 }
 
 model ActivityLog {
   id        String       @id @default(cuid())
   createdAt DateTime     @default(now())
   type      ActivityType
+  modId     String?
+  mod       User?        @relation("Mod Activity Logs", fields: [modId], references: [id], onDelete: Cascade)
   userId    String?
-  user      User?        @relation(fields: [userId], references: [id])
+  user      User?        @relation("User Activity Logs", fields: [userId], references: [id], onDelete: SetNull)
+  notes     String?
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  authorId  String
+  author    User     @relation("Submitted Reports", fields: [authorId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation("Reports", fields: [userId], references: [id], onDelete: Cascade)
   buildId   String?
-  build     Build?       @relation(fields: [buildId], references: [id])
+  build     Build?   @relation(fields: [buildId], references: [id], onDelete: Cascade)
   reviewId  String?
-  review    Review?      @relation(fields: [reviewId], references: [id])
+  review    Review?  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  replyId   String?
+  reply     Reply?   @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  notes     String?
 }

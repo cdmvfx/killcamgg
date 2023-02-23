@@ -7,6 +7,7 @@ import { userRouter } from './user';
 import { reviewRouter } from './review';
 import { replyRouter } from './reply';
 import { settingsRouter } from './settings';
+import { modRouter } from './mod';
 
 export const appRouter = router({
 	build: buildRouter,
@@ -16,7 +17,8 @@ export const appRouter = router({
 	user: userRouter,
 	review: reviewRouter,
 	reply: replyRouter,
-	settings: settingsRouter
+	settings: settingsRouter,
+	mod: modRouter
 });
 
 // export type definition of API

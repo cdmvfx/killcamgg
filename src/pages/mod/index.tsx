@@ -2,6 +2,7 @@ import { Tab } from "@headlessui/react";
 import type { GetServerSidePropsContext } from "next";
 import { Fragment } from "react";
 import { BuildGrid } from "../../components/features/build";
+import ReportItem from "../../components/features/moderation/ReportItem";
 import Heading from "../../components/ui/Heading";
 import Spinner from "../../components/ui/Spinner";
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
@@ -9,15 +10,17 @@ import { isAuthorized } from "../../utils/isAuthorized";
 import { trpc } from "../../utils/trpc";
 
 const ModPage = () => {
-  const { data: pendingBuilds } = trpc.build.getAllPending.useQuery();
-  const { data: rejectedBuilds } = trpc.build.getAllRejected.useQuery();
+  const { data: pendingBuilds } = trpc.mod.getAllPendingBuilds.useQuery();
+  const { data: rejectedBuilds } = trpc.mod.getAllRejectedBuilds.useQuery();
+
+  const { data: reports } = trpc.mod.getAllReports.useQuery();
 
   const buildTabs = ["Pending", "Rejected"];
 
   return (
     <div className="p-4 md:py-10">
       <h1 className="mb-8">Moderator Dashboard</h1>
-      <div>
+      <div className="mb-8">
         <Heading>Builds</Heading>
         <Tab.Group>
           <Tab.List>
@@ -57,6 +60,14 @@ const ModPage = () => {
           </Tab.Panels>
         </Tab.Group>
         <div></div>
+      </div>
+      <div>
+        <Heading>Reports</Heading>
+        <div className="flex flex-col gap-4">
+          {reports?.map((report) => (
+            <ReportItem key={report.id} report={report} />
+          ))}
+        </div>
       </div>
     </div>
   );

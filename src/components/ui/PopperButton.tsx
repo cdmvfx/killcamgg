@@ -78,7 +78,7 @@ const PopperButton = (props: Props) => {
           >
             <Popover.Panel
               static
-              className="absolute z-20 "
+              className="absolute z-10 "
               ref={setPopperElement as React.LegacyRef<HTMLDivElement>}
               style={styles.popper}
               {...attributes.popper}

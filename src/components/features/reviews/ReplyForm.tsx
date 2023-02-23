@@ -2,10 +2,10 @@ import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import { trpc } from "../../../utils/trpc";
 import { z } from "zod";
-import Toast from "../../ui/Toast";
 import Button from "../../ui/Button";
 import { TRPCClientError } from "@trpc/client";
 import { replyFormSchema } from "../../../lib/formSchemas";
+import toast from "react-hot-toast";
 
 type ReplyFormProps = {
   authorName: string;
@@ -20,13 +20,6 @@ const ReplyForm = (props: ReplyFormProps) => {
 
   const [content, setContent] = useState("");
 
-  const [toast, setToast] = useState({
-    isVisible: false,
-    setIsVisible: (isVisible: boolean) => setToast({ ...toast, isVisible }),
-    message: "",
-    status: "error",
-  });
-
   const utils = trpc.useContext();
 
   const { mutate } = trpc.reply.post.useMutation({
@@ -37,11 +30,7 @@ const ReplyForm = (props: ReplyFormProps) => {
     },
     onError: (error) => {
       if (error instanceof TRPCClientError) {
-        setToast((prev) => ({
-          ...prev,
-          isVisible: true,
-          message: error.message,
-        }));
+        toast.error(error.message);
       }
     },
   });
@@ -52,11 +41,7 @@ const ReplyForm = (props: ReplyFormProps) => {
       mutate({ content, reviewId, replyId });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        setToast((prev) => ({
-          ...prev,
-          isVisible: true,
-          message: (error as z.ZodError).message,
-        }));
+        toast.error(error.message);
       }
     }
   };
@@ -68,12 +53,6 @@ const ReplyForm = (props: ReplyFormProps) => {
 
   return (
     <div className="mb-4 flex w-full flex-col gap-2 md:flex-row md:items-center md:gap-4">
-      <Toast
-        isVisible={toast.isVisible}
-        setIsVisible={toast.setIsVisible}
-        message={toast.message}
-        status="error"
-      />
       <label>Reply to {authorName}</label>
       <input
         type="text"

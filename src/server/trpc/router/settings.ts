@@ -1,7 +1,6 @@
 import { TRPCError } from '@trpc/server';
-import { Build, Review } from "@prisma/client";
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { router, protectedProcedure } from "../trpc";
 import { uploadImage } from "../../common/cloudinary";
 import { settingsFormSchema } from '../../../lib/formSchemas';
 
@@ -90,7 +89,7 @@ export const settingsRouter = router({
 				encodedImage: z.string()
 			})
 		)
-		.mutation(async ({ ctx, input }) => {
+		.mutation(async ({ input }) => {
 
 			try {
 				return uploadImage(input.encodedImage);

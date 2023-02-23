@@ -10,6 +10,9 @@ import Alert from "../../ui/Alert";
 import Spinner from "../../ui/Spinner";
 import ModalButton from "../../ui/ModalButton";
 import { trpc } from "../../../utils/trpc";
+import ReplyModMenu from "../moderation/ReplyModMenu";
+import toast from "react-hot-toast";
+import { useRouter } from "next/router";
 
 const ReplyItem = ({
   reviewId,
@@ -32,8 +35,9 @@ const ReplyItem = ({
   ) => void;
 }) => {
   const [isReplyFormOpen, setIsReplyFormOpen] = useState(false);
+  const router = useRouter();
 
-  if (!reply || reply.deletedAt) return <></>;
+  if (!reply) return <></>;
 
   const isLiked = sessionUser
     ? reply.likes.some((like) => {
@@ -48,11 +52,7 @@ const ReplyItem = ({
         <div>
           <Link href={`/${reply.author.name}`} className="relative">
             <Image
-              src={
-                reply.deletedAt
-                  ? "/favicon.ico"
-                  : (reply.author.image as string)
-              }
+              src={reply.author.image}
               className="mt-1 rounded-full"
               width={20}
               height={20}
@@ -72,7 +72,7 @@ const ReplyItem = ({
               Replying to{" "}
               <Link
                 className="text-neutral-400 transition-all hover:text-orange-500"
-                href={`/${reply.reply.author.name as string}`}
+                href={`/${reply.reply.author.name}`}
               >
                 {reply.reply.author.displayName}
               </Link>
@@ -105,8 +105,19 @@ const ReplyItem = ({
               text="Reply"
               classNames="p-0 mb-0 hover:text-orange-500"
               variant="plain"
-              onClick={() => setIsReplyFormOpen((prev) => !prev)}
+              onClick={() => {
+                if (sessionUser) {
+                  return setIsReplyFormOpen((prev) => !prev);
+                }
+                return router.push("/auth/signin");
+              }}
             />
+            {sessionUser && <ReportReply replyId={reply.id} />}
+            {sessionUser &&
+              (sessionUser.role === "ADMIN" ||
+                sessionUser.role === "MODERATOR") && (
+                <ReplyModMenu buildId={buildId} replyId={reply.id} />
+              )}
           </div>
         </div>
       </div>
@@ -183,6 +194,76 @@ const DeleteReply = (props: { replyId: string; buildId: string }) => {
         )}
       </div>
     </ModalButton>
+  );
+};
+
+const ReportReply = (props: { replyId: string }) => {
+  const { replyId } = props;
+
+  const [showModal, setShowModal] = useState(false);
+  const [reason, setReason] = useState("");
+
+  const { mutate, isLoading } = trpc.reply.report.useMutation({
+    onSuccess: () => {
+      toast.success("Comment reported.");
+      setReason("");
+      setShowModal(false);
+    },
+    onError: () => {
+      toast.error("Failed to report comment.");
+    },
+  });
+
+  const handleReport = () => {
+    mutate({ replyId, reason });
+  };
+
+  return (
+    <>
+      <ModalButton
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        openButton={
+          <Button
+            text="Report"
+            classNames="p-0 mb-0 hover:text-orange-500"
+            variant="plain"
+            onClick={() => setShowModal(true)}
+          />
+        }
+      >
+        <div>
+          <div className="mb-4">
+            <p>Please explain why you are reporting this comment.</p>
+            <textarea
+              cols={4}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </div>
+          {isLoading ? (
+            <Spinner />
+          ) : (
+            <>
+              <Button
+                text="Report"
+                classNames="mb-2"
+                variant="primary"
+                onClick={handleReport}
+                width="full"
+              />
+              <Button
+                text="Cancel"
+                classNames=""
+                variant="secondary"
+                width="full"
+                onClick={() => setShowModal(false)}
+              />
+            </>
+          )}
+        </div>
+      </ModalButton>
+    </>
   );
 };
 
