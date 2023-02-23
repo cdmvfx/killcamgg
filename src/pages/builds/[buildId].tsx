@@ -35,6 +35,7 @@ import { BuildSetup } from "../../components/features/build";
 import PopperButton from "../../components/ui/PopperButton";
 import Button from "../../components/ui/Button";
 import toast from "react-hot-toast";
+import parse from "html-react-parser";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
@@ -168,9 +169,9 @@ const BuildPage: NextPage<PageProps> = (props) => {
               leave="ease-in duration-200"
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
-              className="flex h-full items-center justify-center"
+              className="flex h-full items-center justify-center py-8"
             >
-              <Dialog.Panel className=" min-h-fit w-full max-w-lg transform overflow-hidden bg-[#274b48] p-4 text-left align-middle shadow-xl transition-all md:rounded-2xl">
+              <Dialog.Panel className=" max-h-full min-h-fit w-full max-w-lg transform overflow-y-scroll bg-[#274b48] p-4 text-left align-middle shadow-xl transition-all md:rounded-2xl">
                 <BuildForm
                   existingBuild={build}
                   setShowBuildForm={setShowBuildForm}
@@ -363,7 +364,7 @@ const BuildInfo = ({ build }: Omit<PageProps, "sessionUser">) => {
       <Heading>Guide</Heading>
       <div className="relative flex h-full min-h-full flex-col-reverse gap-4 md:grid md:grid-cols-[auto,24rem]">
         <Panel className="lg:p-8">
-          <p>{build.description || ""}</p>
+          {build.description ? parse(build.description) : ""}
         </Panel>
         <Panel className="h-fit md:sticky md:top-4">
           <BuildSetup build={build} />

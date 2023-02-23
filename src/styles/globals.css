@@ -74,3 +74,17 @@ select:focus,
 .grouped-dropdown:focus {
   @apply outline outline-orange-500;
 }
+
+*::-webkit-scrollbar {
+  width: 1em;
+  background: none;
+}
+
+*::-webkit-scrollbar-track {
+  background: none;
+}
+
+*::-webkit-scrollbar-thumb {
+  @apply bg-orange-600;
+  border-radius: 999px;
+}

@@ -38,7 +38,7 @@ export const buildFormSchema = z.object({
 			message: "Title must be less than 50 characters.",
 		}),
 	description: z.string().min(50, {
-		message: "Description must be at least 50 characters.",
+		message: "Guide must be at least 50 characters.",
 	}),
 	weaponId: z.number({
 		required_error: "You must select a weapon.",
