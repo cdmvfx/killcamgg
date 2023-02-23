@@ -18,7 +18,7 @@ const SigninPage = ({}: InferGetServerSidePropsType<
   const getErrorMessage = (code: string) => {
     switch (code) {
       case "OAuthAccountNotLinked":
-        return "Your account is not linked to a Discord account. Please use the original method you used to sign in.";
+        return "Your account is not linked to this platform. Please use the original method you used to sign in.";
       default:
         return "An unknown error occurred. Please try again.";
     }
@@ -26,7 +26,7 @@ const SigninPage = ({}: InferGetServerSidePropsType<
 
   return (
     <div className="m-auto w-full max-w-md p-8 md:p-0">
-      <Panel className="flex flex-col gap-5">
+      <Panel className="flex flex-col gap-2">
         {error && (
           <Alert status="error" message={getErrorMessage(error as string)} />
         )}

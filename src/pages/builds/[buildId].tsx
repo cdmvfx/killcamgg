@@ -7,7 +7,7 @@ import { IoMdHeart, IoMdHeartEmpty, IoMdStar } from "react-icons/io";
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
 import { trpc } from "../../utils/trpc";
 import React, { useState } from "react";
-import { BuildForm } from "../../components/features/build";
+import { BuildForm, ReportBuild } from "../../components/features/build";
 import BuildModMenu from "../../components/features/moderation/BuildModMenu";
 import {
   MdThumbDownOffAlt,
@@ -27,7 +27,6 @@ import { Dialog, Transition } from "@headlessui/react";
 import { isAuthorized as checkIfModOrAdmin } from "../../utils/isAuthorized";
 import { FaEdit, FaLink } from "react-icons/fa";
 import { copyToClipboard } from "../../utils/copyToClipboard";
-import Toast from "../../components/ui/Toast";
 import type { ReviewFromBuildGetOneResult } from "../../types/Reviews";
 import { appRouter } from "../../server/trpc/router/_app";
 import { createContextServerSideProps } from "../../server/trpc/context";
@@ -35,6 +34,7 @@ import { ReviewForm } from "../../components/features/reviews";
 import { BuildSetup } from "../../components/features/build";
 import PopperButton from "../../components/ui/PopperButton";
 import Button from "../../components/ui/Button";
+import toast from "react-hot-toast";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
@@ -42,8 +42,6 @@ const BuildPage: NextPage<PageProps> = (props) => {
   const { build: initialBuildData, sessionUser } = props;
 
   const [showBuildForm, setShowBuildForm] = useState(false);
-
-  const [isCopyBuildToastOpen, setIsCopyBuildToastOpen] = useState(false);
 
   const utils = trpc.useContext();
 
@@ -118,12 +116,6 @@ const BuildPage: NextPage<PageProps> = (props) => {
 
   return (
     <div>
-      <Toast
-        isVisible={isCopyBuildToastOpen}
-        setIsVisible={setIsCopyBuildToastOpen}
-        status="success"
-        message="Successfully copied build URL!"
-      />
       {build && (
         <div className="flex flex-col gap-4 md:gap-8 md:p-4">
           <BuildHeader
@@ -135,7 +127,6 @@ const BuildPage: NextPage<PageProps> = (props) => {
             showBuildForm={showBuildForm}
             setShowBuildForm={setShowBuildForm}
             isLiked={isLiked}
-            setIsCopyBuildToastOpen={setIsCopyBuildToastOpen}
           />
 
           <BuildInfo build={build} />
@@ -169,24 +160,23 @@ const BuildPage: NextPage<PageProps> = (props) => {
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full justify-center md:p-4">
-              <Transition.Child
-                as={React.Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="min-h-full w-full max-w-lg transform overflow-hidden bg-[#274b48] p-4 text-left align-middle shadow-xl transition-all md:rounded-2xl">
-                  <BuildForm
-                    existingBuild={build}
-                    setShowBuildForm={setShowBuildForm}
-                  />
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
+            <Transition.Child
+              as={"div"}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+              className="flex h-full items-center justify-center"
+            >
+              <Dialog.Panel className=" min-h-fit w-full max-w-lg transform overflow-hidden bg-[#274b48] p-4 text-left align-middle shadow-xl transition-all md:rounded-2xl">
+                <BuildForm
+                  existingBuild={build}
+                  setShowBuildForm={setShowBuildForm}
+                />
+              </Dialog.Panel>
+            </Transition.Child>
           </div>
         </Dialog>
       </Transition>
@@ -202,7 +192,6 @@ const BuildHeader = ({
   averageRating,
   setShowBuildForm,
   isLiked,
-  setIsCopyBuildToastOpen,
 }: PageProps & {
   isFavorited: boolean;
   changeFavorite: () => void;
@@ -210,7 +199,6 @@ const BuildHeader = ({
   showBuildForm: boolean;
   setShowBuildForm: Dispatch<SetStateAction<boolean>>;
   isLiked: boolean | null;
-  setIsCopyBuildToastOpen: Dispatch<SetStateAction<boolean>>;
 }) => {
   const utils = trpc.useContext();
 
@@ -309,9 +297,10 @@ const BuildHeader = ({
                       copyToClipboard(
                         `${window.location.origin}/builds/${build.id}`
                       );
-                      setIsCopyBuildToastOpen(true);
+                      toast.success("Build URL copied!");
                     }}
                   />
+                  {sessionUser && <ReportBuild buildId={build.id} />}
                   {sessionUser && sessionUser.id === build.authorId && (
                     <PopperButton
                       showOn="hover"
@@ -371,16 +360,12 @@ const BuildHeader = ({
 const BuildInfo = ({ build }: Omit<PageProps, "sessionUser">) => {
   return (
     <section className="p-4 md:p-0">
-      <Heading>Build Guide</Heading>
-      <div className="relative flex flex-col-reverse gap-4 md:flex-row">
-        <Panel className="basis-2/3 lg:p-8">
-          <div className="build-info flex flex-col gap-4 md:flex-row">
-            <div className="basis-full">
-              <p>{build.description || ""}</p>
-            </div>
-          </div>
+      <Heading>Guide</Heading>
+      <div className="relative flex h-full min-h-full flex-col-reverse gap-4 md:grid md:grid-cols-[auto,24rem]">
+        <Panel className="lg:p-8">
+          <p>{build.description || ""}</p>
         </Panel>
-        <Panel className="basis-1/3 md:sticky md:top-4">
+        <Panel className="h-fit md:sticky md:top-4">
           <BuildSetup build={build} />
         </Panel>
       </div>
@@ -409,7 +394,7 @@ const BuildReviews = (
               : build.reviews.length + " Reviews"}
           </Heading>
           {!sessionUser && (
-            <Link href="/signin">
+            <Link href="/auth/signin">
               <Button
                 text="Sign in to review this build!"
                 classNames="border-0 mb-4"

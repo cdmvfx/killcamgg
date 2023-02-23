@@ -12,26 +12,18 @@ import Button from "../../components/ui/Button";
 import Heading from "../../components/ui/Heading";
 import Panel from "../../components/ui/Panel";
 import Spinner from "../../components/ui/Spinner";
-import Toast from "../../components/ui/Toast";
 import { settingsFormSchema } from "../../lib/formSchemas";
 import { getServerAuthSession } from "../../server/common/get-server-auth-session";
 import { createContextServerSideProps } from "../../server/trpc/context";
 import { appRouter } from "../../server/trpc/router/_app";
 import getBase64 from "../../utils/getBase64";
 import { trpc } from "../../utils/trpc";
+import toast from "react-hot-toast";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
 const SettingsPage: NextPage<PageProps> = (props) => {
   const { settings } = props;
-
-  const [toast, setToast] = useState({
-    message: "",
-    status: "success" as "success" | "error" | "warning" | "info",
-    isVisible: false,
-    setIsVisible: (isVisible: boolean) =>
-      setToast((prev) => ({ ...prev, isVisible })),
-  });
 
   const [username, setUsername] = useState(settings.name);
   const [displayName, setDisplayName] = useState(settings.displayName);
@@ -63,18 +55,11 @@ const SettingsPage: NextPage<PageProps> = (props) => {
 
   const { mutate: updateSettings, isLoading: isLoadingSettingsUpdate } =
     trpc.settings.saveSettings.useMutation({
-      onSuccess: (data) => {
-        console.log("Saved", data);
-        setToast((prev) => ({
-          ...prev,
-          message: "Settings saved successfully.",
-          status: "success",
-          isVisible: true,
-        }));
+      onSuccess: () => {
+        toast.success("Settings saved!");
       },
       onError: (error) => {
         if (error instanceof TRPCClientError) {
-          console.log(error.message);
           if (
             error.message === "User with that name already exists" ||
             error.message === "Invalid username"
@@ -85,20 +70,10 @@ const SettingsPage: NextPage<PageProps> = (props) => {
             }));
             return;
           }
-          setToast((prev) => ({
-            ...prev,
-            message: error.message,
-            status: "error",
-            isVisible: true,
-          }));
+          toast.error(error.message);
           return;
         }
-        setToast((prev) => ({
-          ...prev,
-          message: "Failed to save settings.",
-          status: "error",
-          isVisible: true,
-        }));
+        toast.error("Failed to save settings.");
       },
     });
 
@@ -115,12 +90,7 @@ const SettingsPage: NextPage<PageProps> = (props) => {
 
     getBase64(file, (result) => {
       if (!result) {
-        setToast((prev) => ({
-          ...prev,
-          message: "Failed to encode image.",
-          status: "error",
-          isVisible: true,
-        }));
+        toast.error("Failed to encode image.");
       }
       setImage(result as string);
     });
@@ -140,7 +110,7 @@ const SettingsPage: NextPage<PageProps> = (props) => {
       socials: null,
     });
     try {
-      const newSettings = settingsFormSchema.parse({
+      settingsFormSchema.parse({
         username,
         displayName,
         image: settings.image === image ? undefined : image,
@@ -190,7 +160,6 @@ const SettingsPage: NextPage<PageProps> = (props) => {
 
   return (
     <div className="p-4">
-      <Toast {...toast} />
       <Heading>Settings</Heading>
       <Panel className="flex flex-col gap-8">
         <div className="flex flex-wrap border-b border-b-black pb-8 md:flex-nowrap">

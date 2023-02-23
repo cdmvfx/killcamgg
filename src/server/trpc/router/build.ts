@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { DateRange, Sort } from "../../../types/Filters";
 import hot from "../../../utils/ranking";
-import { router, publicProcedure, protectedProcedure, modOrAdminProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure } from "../trpc";
 
 export const buildRouter = router({
 	getAll: publicProcedure
@@ -285,7 +285,7 @@ export const buildRouter = router({
 			}
 
 			try {
-				await ctx.prisma.build.create({
+				return await ctx.prisma.build.create({
 					data: {
 						authorId: ctx.session.user.id,
 						title: input.title,
@@ -409,5 +409,28 @@ export const buildRouter = router({
 					status: "PENDING"
 				}
 			})
+		}),
+
+	report: protectedProcedure
+		.input(
+			z.object({
+				buildId: z.string(),
+				reason: z.string()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return ctx.prisma.report.create({
+					data: {
+						authorId: ctx.session.user.id,
+						buildId: input.buildId,
+						notes: input.reason
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in build.report: ');
+				console.log(error);
+			}
 		})
 });

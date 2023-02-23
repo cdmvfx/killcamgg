@@ -133,5 +133,28 @@ export const replyRouter = router({
 			catch (e) {
 				console.log(e);
 			}
+		}),
+
+	report: protectedProcedure
+		.input(
+			z.object({
+				replyId: z.string(),
+				reason: z.string()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return ctx.prisma.report.create({
+					data: {
+						authorId: ctx.session.user.id,
+						replyId: input.replyId,
+						notes: input.reason
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in reply.report: ');
+				console.log(error);
+			}
 		})
 })

@@ -1,4 +1,3 @@
-import { FaChevronCircleDown } from "react-icons/fa";
 import { trpc } from "../../../utils/trpc";
 import Button from "../../ui/Button";
 import PopperButton from "../../ui/PopperButton";
@@ -68,7 +67,19 @@ const BuildModMenu = (props: Props) => {
                 </div>
               </>
             }
-            button={<FaChevronCircleDown />}
+            button={
+              <>
+                {status === "REJECTED" ? (
+                  <div className="rounded-full bg-red-500 px-2 text-white">
+                    REJECTED
+                  </div>
+                ) : (
+                  <div className="rounded-full bg-emerald-500 px-2 text-white">
+                    APPROVED
+                  </div>
+                )}
+              </>
+            }
           />
         </>
       )}

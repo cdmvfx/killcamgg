@@ -6,7 +6,6 @@ import Panel from "../../components/ui/Panel";
 import { createContextServerSideProps } from "../../server/trpc/context";
 import { appRouter } from "../../server/trpc/router/_app";
 import {
-  FaChevronCircleDown,
   FaDiscord,
   FaInstagram,
   FaTiktok,
@@ -25,22 +24,21 @@ import PopperButton from "../../components/ui/PopperButton";
 import Link from "next/link";
 import { RankBadge } from "../../components/ui/RankBadge";
 import { RoleBadge } from "../../components/ui/RoleBadge";
-import { isAuthorized } from "../../utils/isAuthorized";
 import UserModMenu from "../../components/features/moderation/UserModMenu";
 import { trpc } from "../../utils/trpc";
+import ReportUser from "../../components/features/profile/ReportUser";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
 const ProfilePage: NextPage<PageProps> = (props) => {
   const { user: initialUser, sessionUser } = props;
 
-  const { data: user, isLoading: isLoadingUser } =
-    trpc.user.getProfileData.useQuery(
-      { name: initialUser.name },
-      {
-        initialData: initialUser,
-      }
-    );
+  const { data: user } = trpc.user.getProfileData.useQuery(
+    { name: initialUser.name },
+    {
+      initialData: initialUser,
+    }
+  );
 
   if (!user) {
     return <>No User</>;
@@ -75,6 +73,7 @@ const ProfilePage: NextPage<PageProps> = (props) => {
               )}
               <RoleBadge role={user.role} />
               <RankBadge score={user.score} />
+              {sessionUser && <ReportUser userId={user.id} />}
               {sessionUser &&
                 (sessionUser.role === "ADMIN" ||
                   sessionUser.role === "MODERATOR") && (

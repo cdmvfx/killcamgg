@@ -255,4 +255,64 @@ export const modRouter = router({
 			}
 		}),
 
+	getAllReports: modOrAdminProcedure
+		.query(async ({ ctx }) => {
+			try {
+				return await ctx.prisma.report.findMany({
+					include: {
+						reply: {
+							select: {
+								content: true,
+								author: {
+									select: {
+										name: true,
+										displayName: true
+									}
+								},
+								review: {
+									select: {
+										buildId: true
+									}
+								}
+							}
+						},
+						review: {
+							select: {
+								buildId: true,
+								author: {
+									select: {
+										name: true,
+										displayName: true
+									}
+								},
+								content: true
+							}
+						},
+						build: {
+							select: {
+								id: true
+							}
+						},
+						user: {
+							select: {
+								name: true
+							}
+						},
+						author: {
+							select: {
+								name: true,
+								displayName: true,
+							}
+						}
+					},
+					orderBy: {
+						createdAt: 'desc'
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in build.getAllReports: ');
+			}
+		})
+
 })

@@ -1,6 +1,6 @@
 import type { Build, Review } from "@prisma/client";
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure } from "../trpc";
 
 export const userRouter = router({
 	getProfileData: publicProcedure
@@ -301,4 +301,27 @@ export const userRouter = router({
 				console.log(error);
 			}
 		}),
+
+	report: protectedProcedure
+		.input(
+			z.object({
+				userId: z.string(),
+				reason: z.string()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return ctx.prisma.report.create({
+					data: {
+						authorId: ctx.session.user.id,
+						userId: input.userId,
+						notes: input.reason
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in user.report: ');
+				console.log(error);
+			}
+		})
 })

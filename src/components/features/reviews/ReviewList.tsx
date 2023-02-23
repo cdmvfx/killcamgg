@@ -12,6 +12,10 @@ import Button from "../../ui/Button";
 import ReplyForm from "./ReplyForm";
 import ReplyItem from "./ReplyItem";
 import ReviewModMenu from "../moderation/ReviewModMenu";
+import ModalButton from "../../ui/ModalButton";
+import Spinner from "../../ui/Spinner";
+import toast from "react-hot-toast";
+import { useRouter } from "next/router";
 
 type ReviewListProps = {
   reviews: ReviewFromBuildGetOneResult[];
@@ -113,6 +117,8 @@ export const ReviewItem = (props: ReviewItemProps) => {
 
   const [repliesToShow, setRepliesToShow] = useState(2);
 
+  const router = useRouter();
+
   const showMoreReplies = () => {
     setRepliesToShow((prev) => {
       if (prev + 2 > review.replies.length) return review.replies.length;
@@ -196,8 +202,14 @@ export const ReviewItem = (props: ReviewItemProps) => {
               text="Reply"
               classNames="p-0 mb-0 hover:text-orange-500"
               variant="plain"
-              onClick={() => setIsReplyFormOpen((prev) => !prev)}
+              onClick={() => {
+                if (sessionUser) {
+                  return setIsReplyFormOpen((prev) => !prev);
+                }
+                return router.push("/auth/signin");
+              }}
             />
+            {sessionUser && <ReportReview reviewId={review.id} />}
             {sessionUser &&
               (sessionUser.role === "ADMIN" ||
                 sessionUser.role === "MODERATOR") && (
@@ -235,6 +247,76 @@ export const ReviewItem = (props: ReviewItemProps) => {
         </div>
       </div>
     </div>
+  );
+};
+
+const ReportReview = (props: { reviewId: string }) => {
+  const { reviewId } = props;
+
+  const [showModal, setShowModal] = useState(false);
+  const [reason, setReason] = useState("");
+
+  const { mutate, isLoading } = trpc.review.report.useMutation({
+    onSuccess: () => {
+      toast.success("Review reported.");
+      setReason("");
+      setShowModal(false);
+    },
+    onError: () => {
+      toast.error("Failed to report review.");
+    },
+  });
+
+  const handleReport = () => {
+    mutate({ reviewId, reason });
+  };
+
+  return (
+    <>
+      <ModalButton
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        openButton={
+          <Button
+            text="Report"
+            classNames="p-0 mb-0 hover:text-orange-500"
+            variant="plain"
+            onClick={() => setShowModal(true)}
+          />
+        }
+      >
+        <div>
+          <div className="mb-4">
+            <p>Please explain why you are reporting this review.</p>
+            <textarea
+              cols={4}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </div>
+          {isLoading ? (
+            <Spinner />
+          ) : (
+            <>
+              <Button
+                text="Report"
+                classNames="mb-2"
+                variant="primary"
+                onClick={handleReport}
+                width="full"
+              />
+              <Button
+                text="Cancel"
+                classNames=""
+                variant="secondary"
+                width="full"
+                onClick={() => setShowModal(false)}
+              />
+            </>
+          )}
+        </div>
+      </ModalButton>
+    </>
   );
 };
 

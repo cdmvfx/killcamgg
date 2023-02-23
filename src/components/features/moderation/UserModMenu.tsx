@@ -1,50 +1,55 @@
-import { FaChevronCircleDown } from "react-icons/fa";
+import { FaBan } from "react-icons/fa";
 import { trpc } from "../../../utils/trpc";
 import Button from "../../ui/Button";
-import PopperButton from "../../ui/PopperButton";
 import { useState } from "react";
 import type { UserGetProfileDataResult } from "../../../types/Users";
+import ModalButton from "../../ui/ModalButton";
+import toast from "react-hot-toast";
 
 const UserModMenu = ({
   user,
 }: {
   user: NonNullable<UserGetProfileDataResult>;
 }) => {
+  const [showModal, setShowModal] = useState(false);
+
   const [reason, setReason] = useState<string>("");
 
   const utils = trpc.useContext();
 
   const { mutate: banUser } = trpc.mod.banUser.useMutation({
     onSuccess: () => {
-      alert("User banned successfully.");
+      toast.success("User banned successfully.");
       utils.user.getProfileData.invalidate({
         name: user.name,
       });
       setReason("");
+      setShowModal(false);
     },
     onError: (error) => {
-      alert(error.message);
+      toast.error(error.message);
       console.log(error);
     },
   });
 
   const { mutate: unbanUser } = trpc.mod.unbanUser.useMutation({
     onSuccess: () => {
-      alert("User unbanned successfully.");
+      toast.success("User unbanned successfully.");
       utils.user.getProfileData.invalidate({
         name: user.name,
       });
       setReason("");
+      setShowModal(false);
     },
     onError: (error) => {
-      alert(error.message);
+      toast.error(error.message);
       console.log(error);
     },
   });
 
   const handleBanUser = async () => {
     if (reason.length < 10) {
-      alert("Please enter a reason longer than 10 characters.");
+      toast.error("Please enter a reason longer than 10 characters.");
       return;
     }
 
@@ -56,7 +61,7 @@ const UserModMenu = ({
 
   const handleUnbanUser = async () => {
     if (reason.length < 10) {
-      alert("Please enter a reason longer than 10 characters.");
+      toast.error("Please enter a reason longer than 10 characters.");
       return;
     }
 
@@ -69,51 +74,70 @@ const UserModMenu = ({
   const isUserBanned = user.ban;
 
   return (
-    <PopperButton
-      showOn="click"
-      tooltip={
-        !isUserBanned ? (
+    <>
+      <ModalButton
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        openButton={
           <>
-            <label>Please enter a reason why you are banning this user.</label>
-            <input
-              type="text"
-              className="mb-2"
+            {isUserBanned ? (
+              <>
+                <div className="rounded-full bg-red-500 px-2 text-white">
+                  BANNED
+                </div>
+                <FaBan
+                  className="cursor-pointer transition-all hover:text-orange-500"
+                  onClick={() => setShowModal(true)}
+                />
+              </>
+            ) : (
+              <FaBan
+                className="cursor-pointer transition-all hover:text-orange-500"
+                onClick={() => setShowModal(true)}
+              />
+            )}
+          </>
+        }
+      >
+        <div>
+          <div className="mb-4">
+            <p>
+              Please explain why you are{" "}
+              {isUserBanned ? "unbanning" : "banning"} this user.
+            </p>
+            <textarea
+              cols={4}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
-            <div className="flex w-full justify-end">
-              <Button
-                text="Ban User"
-                variant="plain"
-                classNames="bg-red-600 text-white py-2 px-4 hover:bg-red-500"
-                onClick={handleBanUser}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <label>
-              Please enter a reason why you are unbanning this user.
-            </label>
-            <input
-              type="text"
-              className="mb-2"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
+          </div>
+          {isUserBanned ? (
+            <Button
+              text="Unban User"
+              variant="plain"
+              width="full"
+              classNames="bg-emerald-600 mb-2 text-white py-2 px-4 hover:bg-emerald-500"
+              onClick={handleUnbanUser}
             />
-            <div className="flex w-full justify-end">
-              <Button
-                text="Unban User"
-                variant="plain"
-                classNames="bg-emerald-600 text-white py-2 px-4 hover:bg-emerald-500"
-                onClick={handleUnbanUser}
-              />
-            </div>
-          </>
-        )
-      }
-      button={<FaChevronCircleDown />}
-    />
+          ) : (
+            <Button
+              text="Ban User"
+              variant="plain"
+              width="full"
+              classNames="bg-red-600 mb-2 text-white py-2 px-4 hover:bg-red-500"
+              onClick={handleBanUser}
+            />
+          )}
+          <Button
+            text="Cancel"
+            classNames=""
+            variant="secondary"
+            width="full"
+            onClick={() => setShowModal(false)}
+          />
+        </div>
+      </ModalButton>
+    </>
   );
 };
 

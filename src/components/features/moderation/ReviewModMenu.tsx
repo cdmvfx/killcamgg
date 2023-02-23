@@ -1,4 +1,3 @@
-import { FaChevronCircleDown } from "react-icons/fa";
 import { trpc } from "../../../utils/trpc";
 import Button from "../../ui/Button";
 import PopperButton from "../../ui/PopperButton";
@@ -57,7 +56,11 @@ const ReviewModMenu = ({
           </div>
         </>
       }
-      button={<FaChevronCircleDown />}
+      button={
+        <span className="font-bold transition-all hover:text-orange-500">
+          Mod Delete
+        </span>
+      }
     />
   );
 };

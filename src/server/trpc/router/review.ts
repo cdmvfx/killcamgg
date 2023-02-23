@@ -365,5 +365,28 @@ export const reviewRouter = router({
 			catch (error) {
 				console.log('Error calculating new average rating in review.changeLike: ', error);
 			}
+		}),
+
+	report: protectedProcedure
+		.input(
+			z.object({
+				reviewId: z.string(),
+				reason: z.string()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				return ctx.prisma.report.create({
+					data: {
+						authorId: ctx.session.user.id,
+						reviewId: input.reviewId,
+						notes: input.reason
+					}
+				})
+			}
+			catch (error) {
+				console.warn('Error in review.report: ');
+				console.log(error);
+			}
 		})
 })

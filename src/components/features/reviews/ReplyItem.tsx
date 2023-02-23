@@ -11,6 +11,8 @@ import Spinner from "../../ui/Spinner";
 import ModalButton from "../../ui/ModalButton";
 import { trpc } from "../../../utils/trpc";
 import ReplyModMenu from "../moderation/ReplyModMenu";
+import toast from "react-hot-toast";
+import { useRouter } from "next/router";
 
 const ReplyItem = ({
   reviewId,
@@ -33,6 +35,7 @@ const ReplyItem = ({
   ) => void;
 }) => {
   const [isReplyFormOpen, setIsReplyFormOpen] = useState(false);
+  const router = useRouter();
 
   if (!reply) return <></>;
 
@@ -102,8 +105,14 @@ const ReplyItem = ({
               text="Reply"
               classNames="p-0 mb-0 hover:text-orange-500"
               variant="plain"
-              onClick={() => setIsReplyFormOpen((prev) => !prev)}
+              onClick={() => {
+                if (sessionUser) {
+                  return setIsReplyFormOpen((prev) => !prev);
+                }
+                return router.push("/auth/signin");
+              }}
             />
+            {sessionUser && <ReportReply replyId={reply.id} />}
             {sessionUser &&
               (sessionUser.role === "ADMIN" ||
                 sessionUser.role === "MODERATOR") && (
@@ -185,6 +194,76 @@ const DeleteReply = (props: { replyId: string; buildId: string }) => {
         )}
       </div>
     </ModalButton>
+  );
+};
+
+const ReportReply = (props: { replyId: string }) => {
+  const { replyId } = props;
+
+  const [showModal, setShowModal] = useState(false);
+  const [reason, setReason] = useState("");
+
+  const { mutate, isLoading } = trpc.reply.report.useMutation({
+    onSuccess: () => {
+      toast.success("Comment reported.");
+      setReason("");
+      setShowModal(false);
+    },
+    onError: () => {
+      toast.error("Failed to report comment.");
+    },
+  });
+
+  const handleReport = () => {
+    mutate({ replyId, reason });
+  };
+
+  return (
+    <>
+      <ModalButton
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        openButton={
+          <Button
+            text="Report"
+            classNames="p-0 mb-0 hover:text-orange-500"
+            variant="plain"
+            onClick={() => setShowModal(true)}
+          />
+        }
+      >
+        <div>
+          <div className="mb-4">
+            <p>Please explain why you are reporting this comment.</p>
+            <textarea
+              cols={4}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </div>
+          {isLoading ? (
+            <Spinner />
+          ) : (
+            <>
+              <Button
+                text="Report"
+                classNames="mb-2"
+                variant="primary"
+                onClick={handleReport}
+                width="full"
+              />
+              <Button
+                text="Cancel"
+                classNames=""
+                variant="secondary"
+                width="full"
+                onClick={() => setShowModal(false)}
+              />
+            </>
+          )}
+        </div>
+      </ModalButton>
+    </>
   );
 };
 
