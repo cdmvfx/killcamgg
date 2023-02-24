@@ -5,12 +5,12 @@ import { z } from "zod";
 import type {
   Attachment,
   AttachmentCategory,
+  BuildTag,
   Weapon,
   WeaponCategory,
 } from "@prisma/client";
 import Alert from "../../ui/Alert";
 import Heading from "../../ui/Heading";
-import Panel from "../../ui/Panel";
 import type { AttachmentSetupWithAttachment } from "../../../types/Attachments";
 import { useSession } from "next-auth/react";
 import type { BuildGetOneResult } from "../../../types/Builds";
@@ -23,6 +23,9 @@ import Button from "../../ui/Button";
 import { buildFormSchema } from "../../../lib/formSchemas";
 import { TRPCClientError } from "@trpc/client";
 import toast from "react-hot-toast";
+import { Editor } from "@tinymce/tinymce-react";
+import { gamemodeOptions } from "../../../lib/gamemodes";
+import { buildTagOptions } from "../../../lib/buildTags";
 
 type FormErrors = {
   [key: string]: string[];
@@ -89,8 +92,18 @@ const BuildForm = (props: BuildFormProps) => {
   /** States */
 
   const [title, setTitle] = useState(existingBuild?.title || "");
+
+  const [selectedGamemodes, setSelectedGamemodes] = useState<string[]>(
+    existingBuild?.gamemodes || []
+  );
+
+  const [selectedTags, setSelectedTags] = useState<BuildTag[]>(
+    existingBuild?.tags || []
+  );
+
   const [description, setDescription] = useState(
-    existingBuild?.description || ""
+    existingBuild?.description ||
+      "<p>Give your build a guide! Include details like your playstyle, what you like about the build, why you chose certain attachments, etc.</p>"
   );
   const [selectedWeapon, setSelectedWeapon] = useState<Weapon | null>(
     existingBuild?.weapon || null
@@ -216,6 +229,8 @@ const BuildForm = (props: BuildFormProps) => {
         horizontal: attachmentSetup.horizontal,
         vertical: attachmentSetup.vertical,
       })),
+      gamemodes: selectedGamemodes,
+      tags: selectedTags,
     };
 
     try {
@@ -236,6 +251,22 @@ const BuildForm = (props: BuildFormProps) => {
         setErrors(error.flatten().fieldErrors as FormErrors);
       }
       return;
+    }
+  };
+
+  const toggleGamemode = (gamemode: string) => {
+    if (selectedGamemodes.includes(gamemode)) {
+      setSelectedGamemodes((current) => current.filter((g) => g !== gamemode));
+    } else {
+      setSelectedGamemodes((current) => [...current, gamemode]);
+    }
+  };
+
+  const toggleTag = (tag: BuildTag) => {
+    if (selectedTags.includes(tag)) {
+      setSelectedTags((current) => current.filter((g) => g !== tag));
+    } else {
+      setSelectedTags((current) => [...current, tag]);
     }
   };
 
@@ -260,9 +291,9 @@ const BuildForm = (props: BuildFormProps) => {
   return (
     <div>
       <Heading>{existingBuild ? "Edit Your Build" : "Submit A Build"}</Heading>
-      <div className="flex flex-col gap-4">
+      <div className="mt-4 flex flex-col gap-8">
         <div>
-          <label>Title</label>
+          <label className="mb-2">Title</label>
           <input
             type="text"
             value={title}
@@ -283,19 +314,51 @@ const BuildForm = (props: BuildFormProps) => {
             ))}
         </div>
         <div>
-          <label>Description</label>
-          <textarea
-            value={description}
-            placeholder="Give your build a description! Include details like your playstyle, what you like about the build, why you chose certain attachments, etc."
-            minLength={5}
-            rows={4}
-            onChange={(e) => setDescription(e.target.value)}
-            className=""
-          />
-          {errors.description &&
-            errors.description.map((error, index) => (
+          <label className="mb-2">Game Modes</label>
+          <div className="flex flex-wrap gap-2">
+            {gamemodeOptions.map((gamemode) => (
+              <Button
+                onClick={() => toggleGamemode(gamemode.value)}
+                key={gamemode.value}
+                text={gamemode.label}
+                classNames="text-xs"
+                variant={
+                  selectedGamemodes.includes(gamemode.value)
+                    ? "primary"
+                    : "secondary"
+                }
+              />
+            ))}
+          </div>
+          {errors.gamemodes &&
+            errors.gamemodes.map((error, index) => (
               <Alert
-                key={`description-error-${index}`}
+                key={`gamemodes-error-${index}`}
+                status="error"
+                message={error}
+                className="mt-2"
+              />
+            ))}
+        </div>
+        <div>
+          <label className="mb-2">Tags</label>
+          <div className="flex flex-wrap gap-2">
+            {buildTagOptions.map((tag) => (
+              <Button
+                onClick={() => toggleTag(tag.value)}
+                key={tag.value}
+                text={tag.label}
+                classNames="text-xs"
+                variant={
+                  selectedTags.includes(tag.value) ? "primary" : "secondary"
+                }
+              />
+            ))}
+          </div>
+          {errors.tags &&
+            errors.tags.map((error, index) => (
+              <Alert
+                key={`tags-error-${index}`}
                 status="error"
                 message={error}
                 className="mt-2"
@@ -373,6 +436,7 @@ const BuildForm = (props: BuildFormProps) => {
               errors.weaponId.map((error, index) => (
                 <Alert
                   key={`weapon-error-${index}`}
+                  className="mt-2"
                   status="error"
                   message={error}
                 />
@@ -532,7 +596,7 @@ const BuildForm = (props: BuildFormProps) => {
               {numOfAttachments < 5 && (
                 <Button
                   classNames="mx-auto"
-                  variant="tertiary"
+                  variant="secondary"
                   text="Add attachment"
                   onClick={addAttachment}
                 />
@@ -557,6 +621,41 @@ const BuildForm = (props: BuildFormProps) => {
               ))}
           </div>
         )}
+        <div>
+          <label>Guide</label>
+          <Editor
+            apiKey="d8niriv801opbhxnynq8zexo3xjm9f8zq48lfq2tnb3jtgry"
+            value={description}
+            onEditorChange={setDescription}
+            init={{
+              height: 500,
+              menubar: false,
+              toolbar_mode: "wrap",
+              toolbar:
+                "undo redo | formatselect | bold italic strikethrough backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | h1 h2 h3 | removeformat ",
+              skin: "oxide-dark",
+              content_css: "dark",
+              content_style: `
+							body {
+								font-family: -apple-system, BlinkMacSystemFont, 'Inter', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+								line-height: 1.4;
+								margin: 1rem;
+								color: white;
+								background-color: #222222;
+							}
+							`,
+            }}
+          />
+          {errors.description &&
+            errors.description.map((error, index) => (
+              <Alert
+                key={`description-error-${index}`}
+                status="error"
+                message={error}
+                className="mt-2"
+              />
+            ))}
+        </div>
         <div>
           {isLoadingWeapons ||
           isLoadingAttachments ||

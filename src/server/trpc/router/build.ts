@@ -1,4 +1,4 @@
-import type { Build, Prisma } from "@prisma/client";
+import type { Build, BuildTag, GameModes, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { DateRange, Sort } from "../../../types/Filters";
@@ -253,6 +253,8 @@ export const buildRouter = router({
 					horizontal: z.string(),
 					vertical: z.string()
 				})),
+				tags: z.array(z.string()),
+				gamemodes: z.array(z.string())
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -293,7 +295,9 @@ export const buildRouter = router({
 						weaponId: input.weaponId,
 						attachmentSetups: {
 							create: input.attachmentSetups
-						}
+						},
+						gamemodes: input.gamemodes as GameModes[],
+						tags: input.tags as BuildTag[],
 					}
 				})
 			} catch (error) {
@@ -316,6 +320,8 @@ export const buildRouter = router({
 					horizontal: z.string(),
 					vertical: z.string()
 				})),
+				tags: z.array(z.string()),
+				gamemodes: z.array(z.string())
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -334,7 +340,9 @@ export const buildRouter = router({
 						weaponId: input.weaponId,
 						attachmentSetups: {
 							create: input.attachmentSetups
-						}
+						},
+						gamemodes: input.gamemodes as GameModes[],
+						tags: input.tags as BuildTag[],
 					}
 				})
 			} catch (error) {

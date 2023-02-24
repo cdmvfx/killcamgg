@@ -38,7 +38,15 @@ export const buildFormSchema = z.object({
 			message: "Title must be less than 50 characters.",
 		}),
 	description: z.string().min(50, {
-		message: "Description must be at least 50 characters.",
+		message: "Guide must be at least 50 characters.",
+	}),
+	gamemodes: z.array(z.string()).min(1, {
+		message: "You must select at least 1 gamemode.",
+	}),
+	tags: z.array(z.string()).min(1, {
+		message: "You must select at least 1 tag.",
+	}).max(5, {
+		message: "You can only select up to 5 tags.",
 	}),
 	weaponId: z.number({
 		required_error: "You must select a weapon.",

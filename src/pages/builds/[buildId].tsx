@@ -35,6 +35,9 @@ import { BuildSetup } from "../../components/features/build";
 import PopperButton from "../../components/ui/PopperButton";
 import Button from "../../components/ui/Button";
 import toast from "react-hot-toast";
+import parse from "html-react-parser";
+import { Tags } from "../../lib/buildTags";
+import { Gamemodes } from "../../lib/gamemodes";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
@@ -168,9 +171,9 @@ const BuildPage: NextPage<PageProps> = (props) => {
               leave="ease-in duration-200"
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
-              className="flex h-full items-center justify-center"
+              className="flex h-full items-center justify-center py-8"
             >
-              <Dialog.Panel className=" min-h-fit w-full max-w-lg transform overflow-hidden bg-[#274b48] p-4 text-left align-middle shadow-xl transition-all md:rounded-2xl">
+              <Dialog.Panel className=" max-h-full min-h-fit w-full max-w-lg transform overflow-y-scroll bg-[#274b48] p-4 text-left align-middle shadow-xl transition-all md:rounded-2xl">
                 <BuildForm
                   existingBuild={build}
                   setShowBuildForm={setShowBuildForm}
@@ -363,7 +366,25 @@ const BuildInfo = ({ build }: Omit<PageProps, "sessionUser">) => {
       <Heading>Guide</Heading>
       <div className="relative flex h-full min-h-full flex-col-reverse gap-4 md:grid md:grid-cols-[auto,24rem]">
         <Panel className="lg:p-8">
-          <p>{build.description || ""}</p>
+          <div className="mb-8">
+            {build.description ? parse(build.description) : ""}
+          </div>
+          <label className="mb-2 w-full">Gamemodes</label>
+          <div className="mb-4 flex flex-wrap items-center gap-4">
+            {build.gamemodes.map((gamemode) => (
+              <div key={gamemode} className="rounded-full bg-orange-600 px-2">
+                {Gamemodes[gamemode]}
+              </div>
+            ))}
+          </div>
+          <label className="mb-2 w-full">Tags</label>
+          <div className="mb-8 flex flex-wrap items-center gap-4">
+            {build.tags.map((tag) => (
+              <div key={tag} className="rounded-full bg-orange-600 px-2">
+                {Tags[tag]}
+              </div>
+            ))}
+          </div>
         </Panel>
         <Panel className="h-fit md:sticky md:top-4">
           <BuildSetup build={build} />
