@@ -135,6 +135,8 @@ model Build {
   totalReviews     Int               @default(0)
   status           BuildStatus       @default(APPROVED)
   reports          Report[]
+  gamemodes        GameModes[]
+  tags             BuildTag[]
 }
 
 enum BuildStatus {
@@ -143,10 +145,29 @@ enum BuildStatus {
   REJECTED
 }
 
+enum GameModes {
+  WARZONE
+  MULTIPLAYER
+  RANKED_MULTIPLAYER
+  RESURGENCE
+  DMZ
+}
+
 enum BuildTag {
   LONG_RANGE
   MID_RANGE
   SHORT_RANGE
+  SNIPER_SUPPORT
+  FAST_ADS
+  FAST_MOVEMENT
+  FAST_TTK
+  FAST_RELOAD
+  FAST_SWITCH
+  FAST_FIRERATE
+  LOW_RECOIL
+  SMALL_ZOOM
+  MEDIUM_ZOOM
+  HIGH_ZOOM
 }
 
 model AttachmentSetup {

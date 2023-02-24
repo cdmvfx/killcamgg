@@ -36,6 +36,8 @@ import PopperButton from "../../components/ui/PopperButton";
 import Button from "../../components/ui/Button";
 import toast from "react-hot-toast";
 import parse from "html-react-parser";
+import { Tags } from "../../lib/buildTags";
+import { Gamemodes } from "../../lib/gamemodes";
 
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
@@ -364,7 +366,25 @@ const BuildInfo = ({ build }: Omit<PageProps, "sessionUser">) => {
       <Heading>Guide</Heading>
       <div className="relative flex h-full min-h-full flex-col-reverse gap-4 md:grid md:grid-cols-[auto,24rem]">
         <Panel className="lg:p-8">
-          {build.description ? parse(build.description) : ""}
+          <div className="mb-8">
+            {build.description ? parse(build.description) : ""}
+          </div>
+          <label className="mb-2 w-full">Gamemodes</label>
+          <div className="mb-4 flex flex-wrap items-center gap-4">
+            {build.gamemodes.map((gamemode) => (
+              <div key={gamemode} className="rounded-full bg-orange-600 px-2">
+                {Gamemodes[gamemode]}
+              </div>
+            ))}
+          </div>
+          <label className="mb-2 w-full">Tags</label>
+          <div className="mb-8 flex flex-wrap items-center gap-4">
+            {build.tags.map((tag) => (
+              <div key={tag} className="rounded-full bg-orange-600 px-2">
+                {Tags[tag]}
+              </div>
+            ))}
+          </div>
         </Panel>
         <Panel className="h-fit md:sticky md:top-4">
           <BuildSetup build={build} />
